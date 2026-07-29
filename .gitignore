@@ -1,0 +1,14 @@
+.gradle/
+.idea/
+.fleet/
+.vscode/
+build/
+out/
+run/
+logs/
+*.iml
+*.ipr
+*.iws
+*.log
+hs_err_pid*
+replay_pid*

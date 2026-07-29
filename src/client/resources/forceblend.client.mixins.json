@@ -1,0 +1,20 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.mauro0805.forceblend.mixin.client",
+  "compatibilityLevel": "JAVA_17",
+  "plugin": "com.mauro0805.forceblend.mixin.client.ForceBlendMixinPlugin",
+  "client": [
+    "Minecraft118WorldOpenMixin",
+    "WorldOpenFlows119WorldOpenMixin",
+    "WorldOpenFlows1203WorldOpenMixin",
+    "WorldOpenFlows1205WorldOpenMixin",
+    "WorldOpenFlows26WorldOpenMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "overwrites": {
+    "requireAnnotations": true
+  }
+}
