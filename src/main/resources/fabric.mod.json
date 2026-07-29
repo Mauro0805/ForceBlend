@@ -9,9 +9,18 @@
   ],
   "license": "MIT",
   "environment": "client",
+  "languageAdapters": {
+    "forceblend:reflective": "com.mauro0805.forceblend.client.config.ReflectiveModMenuLanguageAdapter"
+  },
   "entrypoints": {
     "client": [
       "com.mauro0805.forceblend.client.ForceBlendClient"
+    ],
+    "modmenu": [
+      {
+        "adapter": "forceblend:reflective",
+        "value": "forceblend"
+      }
     ]
   },
   "mixins": [
@@ -27,5 +36,8 @@
       ">=26.1 <=26.2"
     ],
     "java": ">=17"
+  },
+  "suggests": {
+    "modmenu": "*"
   }
 }
