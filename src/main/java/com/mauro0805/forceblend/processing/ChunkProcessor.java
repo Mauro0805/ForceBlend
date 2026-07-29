@@ -58,6 +58,32 @@ final class ChunkProcessor {
         }
     }
 
+    /**
+     * Predicts the exact outcome without writing anything to disk. The parsed NBT is intentionally
+     * mutated in memory and then discarded so analysis and application share one decision path.
+     */
+    static AnalyzedChunk readAndAnalyze(
+        InputStream decompressedInput,
+        int expectedX,
+        int expectedZ,
+        BlendingProfile profile
+    ) throws IOException {
+        Objects.requireNonNull(decompressedInput, "decompressedInput");
+
+        NamedTag namedTag = new NBTDeserializer(false).fromStream(decompressedInput);
+        if (!(namedTag.getTag() instanceof CompoundTag chunkTag)) {
+            throw new IOException("Chunk NBT root is not a compound tag");
+        }
+        validateStoredPosition(chunkTag, expectedX, expectedZ);
+        try {
+            ChunkModifier.ChunkInspection inspection = ChunkModifier.inspect(chunkTag, profile);
+            ChunkModification modification = ChunkModifier.apply(chunkTag, profile);
+            return new AnalyzedChunk(inspection, modification);
+        } catch (IllegalArgumentException exception) {
+            throw new IOException(exception.getMessage(), exception);
+        }
+    }
+
     private static void validateStoredPosition(CompoundTag chunkTag, int expectedX, int expectedZ) throws IOException {
         Tag<?> rawXPos = chunkTag.get("xPos");
         Tag<?> rawZPos = chunkTag.get("zPos");
@@ -76,5 +102,8 @@ final class ChunkProcessor {
         boolean changed() {
             return modification.changed();
         }
+    }
+
+    record AnalyzedChunk(ChunkModifier.ChunkInspection inspection, ChunkModification modification) {
     }
 }
