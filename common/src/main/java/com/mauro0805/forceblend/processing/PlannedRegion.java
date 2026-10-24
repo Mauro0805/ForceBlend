@@ -10,7 +10,6 @@ final class PlannedRegion {
     private final int regionZ;
     private final RegionFileSnapshot snapshot;
     private final int discoveredChunks;
-    private final BitSet frontierChunks;
     private final BitSet candidateChunks;
     private final BitSet selectedChunks;
     private final ChunkModification[] modifications;
@@ -21,7 +20,6 @@ final class PlannedRegion {
         int regionZ,
         RegionFileSnapshot snapshot,
         int discoveredChunks,
-        BitSet frontierChunks,
         BitSet candidateChunks,
         BitSet selectedChunks,
         ChunkModification[] modifications
@@ -31,7 +29,6 @@ final class PlannedRegion {
         this.regionZ = regionZ;
         this.snapshot = Objects.requireNonNull(snapshot, "snapshot");
         this.discoveredChunks = discoveredChunks;
-        this.frontierChunks = (BitSet) frontierChunks.clone();
         this.candidateChunks = (BitSet) candidateChunks.clone();
         this.selectedChunks = (BitSet) selectedChunks.clone();
         this.modifications = modifications.clone();

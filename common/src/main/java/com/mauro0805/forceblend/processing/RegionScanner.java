@@ -114,16 +114,12 @@ public final class RegionScanner {
         int alreadyPreparedChunks = 0;
         List<RegionSelection> selections = new ArrayList<>(analyzedRegions.size());
         for (AnalyzedRegion region : analyzedRegions) {
-            BitSet regionFrontier = new BitSet(CHUNKS_PER_REGION);
             BitSet candidates = new BitSet(CHUNKS_PER_REGION);
             int regionAffectedChunks = 0;
             for (int index = region.presentChunks().nextSetBit(0);
                  index >= 0;
                  index = region.presentChunks().nextSetBit(index + 1)) {
                 boolean frontierChunk = frontier.contains(region.chunkX(index), region.chunkZ(index));
-                if (frontierChunk) {
-                    regionFrontier.set(index);
-                }
                 if (!frontierChunk && !region.unsafeMarkers().get(index)) {
                     continue;
                 }
@@ -139,7 +135,7 @@ public final class RegionScanner {
             if (regionAffectedChunks > 0) {
                 affectedRegions++;
             }
-            selections.add(new RegionSelection(region, regionFrontier, candidates));
+            selections.add(new RegionSelection(region, candidates));
         }
 
         int chunksLeftToSelect = options.selectedChunkCount(affectedChunks);
@@ -167,7 +163,6 @@ public final class RegionScanner {
                 selection.region().regionZ(),
                 selection.region().snapshot(),
                 selection.region().discoveredChunks(),
-                selection.frontierChunks(),
                 selection.candidates(),
                 selected,
                 selection.region().modifications()
@@ -1043,7 +1038,7 @@ public final class RegionScanner {
     private record RegionApplicationResult(int preparedChunks, int repairedChunks) {
     }
 
-    private record RegionSelection(AnalyzedRegion region, BitSet frontierChunks, BitSet candidates) {
+    private record RegionSelection(AnalyzedRegion region, BitSet candidates) {
     }
 
     private record RegionCoordinates(int regionX, int regionZ, int chunkXOffset, int chunkZOffset) {
