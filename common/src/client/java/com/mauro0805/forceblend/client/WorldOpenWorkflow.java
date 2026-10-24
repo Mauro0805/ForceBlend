@@ -156,13 +156,14 @@ public final class WorldOpenWorkflow {
                 dispatch(() -> {
                     long enterAt = System.nanoTime() + 1_500_000_000L;
                     NativeScreen complete = new NativeScreen("ForceBlend complete");
+                    AtomicBoolean entering = new AtomicBoolean();
                     complete.content(view -> {
                         view.line("ForceBlend preparation complete");
                         view.line((report.preparedChunks() + report.repairedChunks()) + " chunks prepared");
                         view.line("Entering world...");
                     }).onTick(() -> {
-                        if (System.nanoTime() >= enterAt) {
-                            resume();
+                        if (System.nanoTime() >= enterAt && entering.compareAndSet(false, true)) {
+                            NativeScreen.enqueue(() -> dispatch(this::resume));
                         }
                     });
                     NativeScreen.show(complete.handle());

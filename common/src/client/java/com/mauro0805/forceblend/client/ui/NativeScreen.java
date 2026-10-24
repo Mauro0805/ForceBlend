@@ -63,6 +63,20 @@ public final class NativeScreen {
         }
     }
 
+    /** Defers screen transitions until the current screen tick and its event hooks finish. */
+    public static void enqueue(Runnable action) {
+        enqueue(client(), action);
+    }
+
+    static void enqueue(Object client, Runnable action) {
+        try {
+            // Executor.execute can run inline on the render thread; these methods always queue.
+            method(client.getClass(), 1, "schedule", "tell", "method_18858").invoke(client, action);
+        } catch (ReflectiveOperationException exception) {
+            throw failure(exception);
+        }
+    }
+
     /** Minecraft 26.2 moved the current screen and {@code setScreen} from {@code Minecraft} to its {@code Gui}. */
     private static Object screenOwner(Object client) throws ReflectiveOperationException {
         try {

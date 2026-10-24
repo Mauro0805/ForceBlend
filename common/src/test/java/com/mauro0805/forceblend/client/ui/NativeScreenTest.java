@@ -3,6 +3,9 @@ package com.mauro0805.forceblend.client.ui;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Method;
+import java.util.ArrayDeque;
+import java.util.Objects;
+import java.util.Queue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
@@ -10,6 +13,64 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
 class NativeScreenTest {
+    @Test
+    void legacyContinuationWaitsUntilAfterScreenTick() throws ReflectiveOperationException {
+        LegacyClient client = new LegacyClient();
+        verifyDeferredTransition(client, client.pending);
+    }
+
+    @Test
+    void modernContinuationWaitsUntilAfterScreenTick() throws ReflectiveOperationException {
+        ModernClient client = new ModernClient();
+        verifyDeferredTransition(client, client.pending);
+    }
+
+    private static void verifyDeferredTransition(Object client, Queue<Runnable> pending)
+        throws ReflectiveOperationException {
+        byte[] bytes = NativeScreen.adapterBytes(ScreenFixture.class, String.class, "init", "tick", "onClose");
+        Class<?> adapter = new AdapterLoader().define(bytes);
+        Object[] current = new Object[1];
+        AtomicInteger opened = new AtomicInteger();
+        Runnable tick = () -> NativeScreen.enqueue(client, () -> {
+            current[0] = null;
+            opened.incrementAndGet();
+        });
+        Object screen = adapter.getConstructor(String.class, Consumer.class, Runnable.class, Runnable.class)
+            .newInstance("Complete", (Consumer<Object>) ignored -> { }, tick, (Runnable) () -> { });
+        current[0] = screen;
+        adapter.getMethod("tick").invoke(screen);
+        // Fabric 1.18.2 reads the current screen again after Screen.tick returns.
+        assertSame(screen, Objects.requireNonNull(current[0], "Screen cannot be null"));
+        assertEquals(0, opened.get());
+        assertEquals(1, pending.size());
+        pending.remove().run();
+        assertEquals(1, opened.get());
+    }
+
+    public static class LegacyClient {
+        final Queue<Runnable> pending = new ArrayDeque<>();
+
+        public void method_18858(Runnable action) {
+            pending.add(action);
+        }
+
+        public void execute(Runnable action) {
+            action.run();
+        }
+    }
+
+    public static class ModernClient {
+        final Queue<Runnable> pending = new ArrayDeque<>();
+
+        public void schedule(Runnable action) {
+            pending.add(action);
+        }
+
+        public void execute(Runnable action) {
+            action.run();
+        }
+    }
+
     @Test
     void officialLifecycleUsesNativeParentAndRunsCallbacks() throws ReflectiveOperationException {
         verify("init", "tick", "onClose");
