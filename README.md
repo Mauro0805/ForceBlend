@@ -8,6 +8,8 @@ the existing side of the border. It does not retroactively smooth a border whose
 
 ## Version 1.2.0
 
+See the [changelog](CHANGELOG.md) for release changes and earlier version history.
+
 The `1.2.0` development branch combines the earlier workflow with ForceBlend Once's server and NeoForge support.
 Source availability is not a stable-release announcement. Releases use the existing
 [CurseForge project](https://www.curseforge.com/minecraft/mc-mods/forceblend-once); older Modrinth files are historical.

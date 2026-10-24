@@ -42,9 +42,8 @@ CLAUDE.md
 /neoforge/backups/
 /paper/backups/
 
-# Detailed project and internal documentation belongs in forceblend-team; the public README stays here.
+# Detailed internal documentation belongs in forceblend-team; public README and changelog stay here.
 /docs/
-/CHANGELOG.md
 /CONTRIBUTING.md
 /CODE_OF_CONDUCT.md
 /SECURITY.md
