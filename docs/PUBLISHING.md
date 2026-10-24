@@ -1,117 +1,99 @@
 # Publishing ForceBlend
 
-This page contains ready-to-use project information for GitHub, Modrinth, and CurseForge. It is intentionally cautious
-about the difference between the stable release and the new beta.
+Original mod by Mauro0805. Maintained by Mauro0805 and SasnycoN (valcheffnet).
 
-## Project details
+Source lives in [Mauro0805/ForceBlend](https://github.com/Mauro0805/ForceBlend).
+New files use the existing [CurseForge project](https://www.curseforge.com/minecraft/mc-mods/forceblend-once),
+project ID `1746239`, with the chosen display name **ForceBlend**. Preserve the project ID and slug so existing
+modpacks keep their project reference. New Modrinth publication is outside this release plan.
 
-| Field                    | Value                                            |
-|--------------------------|--------------------------------------------------|
-| Name                     | ForceBlend                                       |
-| Slug                     | `forceblend`                                     |
-| Author                   | `Mauro0805`                                      |
-| Current file version     | `1.1.0-beta.1`                                   |
-| File                     | `ForceBlend-1.1.0-beta.1.jar`                    |
-| Version type             | Beta / pre-release                               |
-| Stable reference         | `1.0.0`                                          |
-| Loader                   | Fabric                                           |
-| Environment              | Client; local singleplayer only                  |
-| Declared Minecraft range | Stable 1.18-1.21.11 and 26.1-26.2                |
-| Verified in game         | Stable 1.0.0 on 1.18.2 and 26.2                  |
-| Beta runtime status      | Automated tests passed; in-game retest pending   |
-| Fabric API               | Not required                                     |
-| Mod Menu                 | Optional                                         |
-| License                  | MIT; modpack use and forks allowed               |
-| Source                   | `https://github.com/Mauro0805/forceblend`        |
-| Issues                   | `https://github.com/Mauro0805/forceblend/issues` |
+## Release metadata
 
-Upload the normal JAR, not `-sources.jar`. Keep stable 1.0.0 available while the beta awaits runtime validation.
+| Field | Value |
+|---|---|
+| Version | `1.2.0`, unreleased integration |
+| Development branch | `1.2.0`, starting from the `1.1.0` beta |
+| Name / mod ID | ForceBlend / `forceblend` |
+| Maintainers | Mauro0805 and SasnycoN |
+| Fabric file | `ForceBlend-1.2.0.jar` |
+| NeoForge file | `ForceBlend-neoforge-1.2.0.jar` |
+| Fabric Minecraft range | 1.18-1.21.11 and 26.1-26.3 |
+| NeoForge Minecraft range | 26.3 only; NeoForge 26.3.0.90+ within that family |
+| Environments | Singleplayer and dedicated server |
+| Default run mode | Once per world; every opening is configurable |
+| Backups | `<game>/backups/forceblend/<world>/` |
+| Fabric API | Not required |
+| Mod Menu | Optional, Fabric only |
+| License | MIT; modpacks need no prior permission |
+
+Keep the merged build unpublished until the gameplay matrix is completed. If a preview is deliberately distributed
+before that, mark its platform release type as Beta and make the pending runtime checks explicit.
 
 ## Short description
 
-> Review and prepare existing Overworld chunks for Minecraft's native terrain blending after seed, generator, or chunk
-> layout changes.
+> Prepare existing Overworld chunks for native terrain blending, with client confirmation, server backups, and
+> configurable once-per-world execution.
 
-## Modrinth and CurseForge description
+## CurseForge description
 
-> **ForceBlend** is a client-side Fabric utility and proof of concept for world migrations. It prepares existing
-> Overworld chunks so Minecraft's native terrain blending can smooth the border beside newly generated terrain after a
-> seed or generator change, a chunk import, or a chunk deletion.
+> **Original mod by Mauro0805. Maintained by Mauro0805 and SasnycoN.**
 >
-> When you select a local world, ForceBlend first performs a read-only analysis. It shows how many chunks and regions
-> would change and an approximate processing time. You can apply and enter, create a full backup before applying, enter
-> unchanged, or cancel. Large jobs include progress, ETA, active regions, speed, and a completion notification where
-> desktop notifications are available.
+> ForceBlend prepares existing Overworld chunks so Minecraft can blend new terrain beside them after seed or generator
+> changes, chunk imports, or deletions.
 >
-> Processing can use multiple region workers while keeping one writer per region. Before writing, ForceBlend verifies
-> that the analyzed region files are still current. Changed regions retain the existing temporary-file and validation
-> safeguards; unchanged regions are not rewritten.
+> On clients, a read-only analysis reports affected chunks, regions, and an approximate duration. Apply and enter,
+> back up and apply, enter unchanged, or cancel. Large jobs show progress, ETA, regions, and speed. Fabric Mod Menu
+> provides optional settings; both loaders can use the properties file.
 >
-> Settings cover automatic analysis, automatic backup, detailed logs, a per-opening chunk limit, and processing
-> threads. Defaults are automatic analysis on, unlimited chunks, backups off, detailed logs off, and all available
-> processors. Mod Menu provides an optional settings entry but is not required.
+> Dedicated servers prepare worlds before loading them and always make a complete world backup before applying.
+> Backups are stored under `backups/forceblend/`, outside the source world.
 >
-> ForceBlend prepares only complete chunks within seven chunks of missing or incomplete terrain. It processes local
-> singleplayer Overworld region files only; it does not touch the Nether, End, custom dimensions, entities, or POI data.
-> Blending is not retroactive when both sides of a hard border already exist.
+> Once per world is the default. Every opening is available for worlds that need repeated migrations. Existing
+> `forceblendonce.json` markers are honored. Chunk-limited runs continue on later starts until their planned work is
+> complete.
 >
-> One JAR declares compatibility with stable Minecraft 1.18-1.21.11 and 26.1-26.2. Stable ForceBlend 1.0.0 was verified
-> in game on Minecraft 1.18.2 and 26.2. **Version 1.1.0-beta.1 has passed automated tests but still awaits a fresh
-> in-game test on both versions.** Other listed releases are mapping-audited targets.
+> Fabric targets stable Minecraft 1.18-1.21.11 and 26.1-26.3. The separate NeoForge artifact targets Minecraft 26.3.
+> Install the file for your loader and replace the old ForceBlend Once JAR.
 >
-> Keep a restorable offline backup. Integrated ZIP backups are optional and disabled by default.
+> ForceBlend processes existing Overworld Anvil terrain only. Blending happens when the empty side generates; it cannot
+> smooth a border whose two sides already exist. Keep a restorable offline copy of important worlds.
 >
-> This project may not receive future updates or quick support. Issues and pull requests are welcome but may be reviewed
-> rarely. Forks are encouraged, and ForceBlend may be included in any modpack without asking permission. The project is
-> licensed under MIT.
-
-## 1.1.0-beta.1 release notes
-
-> This beta makes ForceBlend easier to understand before it edits a world.
+> The code is MIT-licensed, free, available for any modpack, and open to forks. Future updates and prompt support are
+> not guaranteed.
 >
-> - Read-only world analysis with chunk, region, deferred-work, and time estimates.
-> - Four choices: apply; back up and apply; enter unchanged; or cancel.
-> - Parallel per-region analysis, validation, and application with deterministic limits.
-> - Progress percentage, ETA, active regions, speed, backup progress, and completion notification.
-> - Optional Mod Menu settings for automatic analysis, backup, detailed logs, limits, and worker threads.
-> - Atomic human-editable configuration at `<game>/config/forceblend.properties`.
-> - Complete timestamped ZIP backups at `<game>/backups/forceblend/<world>/`.
-> - Stale-plan validation before transactional region replacement.
-> - No Fabric API requirement and no new hard configuration dependency.
->
-> The automated suite passes. In-game verification of this beta on 1.18.2 and 26.2 is still pending, so publish it as a
-> beta rather than a stable release. No performance benchmark claim is included.
+> The merged 1.2.0 build still requires its recorded gameplay matrix before a stable release.
 
-## Platform settings
+## Release notes
 
-### Modrinth
+- Integrate the 1.1.0 workflow with SasnycoN's 26.3, server, and NeoForge work.
+- Use a signature-based 26.x client hook with cancellation support.
+- Use native Minecraft confirmation and progress screens instead of Swing dialogs.
+- Share preparation, backup, completion state, configuration, and UI between loader adapters.
+- Add headless Fabric and NeoForge dedicated-server processing with mandatory full-world backups.
+- Default to once per world, honor legacy markers, and offer every-opening mode.
+- Retain `forceblend`, the ForceBlend name, and `backups/forceblend/`.
+- Credit both maintainers in loader metadata and preserve MIT licensing.
 
-- Client side: required
-- Server side: unsupported
-- Dependency: Fabric Loader
-- Optional dependency: Mod Menu
-- Fabric API: not required
-- Version type: **Beta**
-- Select only the exact declared stable Minecraft versions; do not select snapshots or future releases
+## Before publishing
 
-### CurseForge
+For the separate development-push, singleplayer, migration, and publication steps, use
+[the 1.2.0 maintainer checklist](RELEASE_CHECKLIST.md). Pushing source is not a stable-release claim.
 
-- Project type: Mod
-- Suggested category: Utility or World Gen
-- Mod loader: Fabric
-- Release type: **Beta**
-- Select only the exact declared stable Minecraft versions
+1. Complete [the merged gameplay matrix](COMPATIBILITY.md).
+2. Build both artifacts from branch `1.2.0` using JDK 25 and inspect metadata, nested libraries, licenses, and checksums.
+3. Update the CurseForge display name and Source link to the canonical repository.
+4. Keep "Original mod by Mauro0805" at the top of the description and both authors in the project metadata.
+5. Verify author membership and the agreed reward split through the maintainers' account settings.
+6. Publish the GitHub release, then the two loader-specific files on the existing CurseForge project.
+7. Download and verify the published files before a modpack adopts them.
+8. Archive valcheffnet/forceblend-once only after its integration is merged and the canonical source link is live.
 
-## Beta release checklist
+Publishing, account changes, pushes, and archiving remain explicit maintainer operations. SasnycoN may push directly;
+community changes can continue through pull requests.
 
-- [ ] Run `./gradlew clean build` with JDK 25.
-- [ ] Confirm that the automated suite passes without ignored product failures.
-- [ ] Confirm the artifact is `build/libs/ForceBlend-1.1.0-beta.1.jar`.
-- [ ] Inspect `fabric.mod.json`, embedded libraries, and third-party notices inside the JAR.
-- [ ] Confirm the settings file and backup path on a disposable instance.
-- [ ] Keep the wording explicit: stable 1.0.0 is verified in game; this beta is not yet re-verified.
-- [ ] Keep the offline-backup warning visible and state that automatic backup defaults to off.
-- [ ] Do not publish a speedup claim without a reproducible benchmark.
-- [ ] Calculate and publish the SHA-256 checksum.
-- [ ] Tag the repository as `v1.1.0-beta.1` and mark the GitHub release as a pre-release.
-- [ ] Download the published file and test that exact artifact before promoting any later stable release.
+## Build layout
+
+Run `./gradlew build` at the root for both loaders and the shared tests, or use `./gradlew -p fabric build`
+and `./gradlew -p neoforge build` independently. Upload `fabric/build/libs/ForceBlend-1.2.0.jar` and
+`neoforge/build/libs/ForceBlend-neoforge-1.2.0.jar`, not sources JARs or stale root `build/libs/` outputs.
+`paper/` is planning only and produces no release artifact.

@@ -1,0 +1,72 @@
+{
+  "date": "2026-10-24",
+  "scope": "Disposable dedicated servers only; no singleplayer UI verification",
+  "runtime": {
+    "artifact_sha256": "4d98d3f0c018a1849b66517ace97470c38508268110dc8eaeabd0edaeeffc942",
+    "cases": {
+      "1.18.2": {
+        "once_first_and_reopen": true,
+        "marker_count_after_first": 518,
+        "limited_runs": 5,
+        "limit": 128,
+        "every_open_after_deletion": true,
+        "deleted_chunks": 4,
+        "server_only": true,
+        "logs": "Retained in disposable test directory; no client gameplay claimed"
+      },
+      "26.1.2": {
+        "once_first_and_reopen": true,
+        "marker_count_after_first": 476,
+        "limited_runs": 4,
+        "limit": 128,
+        "every_open_after_deletion": true,
+        "deleted_chunks": 4,
+        "server_only": true,
+        "logs": "Retained in disposable test directory; no client gameplay claimed"
+      }
+    }
+  },
+  "legacy": {
+    "minecraft": "26.3",
+    "fabric_loader": "0.19.5",
+    "legacy_mod": "ForceBlend Once 1.1.0",
+    "legacy_sha256": "64422b4717dcfcf3d88625ec37ff076a762b9c3ada36084f7d51fc892a144078",
+    "current_sha256": "4d98d3f0c018a1849b66517ace97470c38508268110dc8eaeabd0edaeeffc942",
+    "real_released_mod_created_marker": true,
+    "legacy_marker_unchanged": true,
+    "current_startup_skipped_preparation": true,
+    "no_new_backup_or_marker": true,
+    "server_saved_and_stopped": true,
+    "singleplayer_tested": false
+  },
+  "border": {
+    "1.18.2": {
+      "mod": {
+        "pairs": 1632,
+        "mean": 1.6329656862745099,
+        "median": 0,
+        "maximum": 30
+      },
+      "control": {
+        "pairs": 1632,
+        "mean": 37.9859068627451,
+        "median": 27,
+        "maximum": 121
+      }
+    },
+    "26.1.2": {
+      "mod": {
+        "pairs": 1536,
+        "mean": 1.40625,
+        "median": 0,
+        "maximum": 25
+      },
+      "control": {
+        "pairs": 1536,
+        "mean": 36.376953125,
+        "median": 29,
+        "maximum": 111
+      }
+    }
+  }
+}

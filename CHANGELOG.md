@@ -3,9 +3,35 @@
 This file records meaningful ForceBlend changes. The project follows [Semantic Versioning](https://semver.org/) from
 the first stable community release onward.
 
-## Unreleased
+## 1.2.0 - Testing phase
 
-No changes yet.
+Development branch: `1.2.0`, starting from the `1.1.0` beta.
+
+Original mod by Mauro0805. Maintained by Mauro0805 and SasnycoN.
+
+- Document manual client acceptance, migration, development pushes, and release gates in a maintainer checklist.
+- Correct the team CurseForge drafts to describe 1.2.0 completion markers, full-world backups, and configuration.
+- Verify dedicated-server blending and execution modes on 1.18.2/26.1.2 is working.
+- Migration from a world processed by the actual ForceBlend Once 1.1.0 release. Client acceptance remains pending.
+- Separate shared sources into `common/` and loader adapters into `fabric/` and `neoforge/`.
+- Coordinate both loader builds from the root; move Fabric output to `fabric/build/libs/`.
+- Reserve `paper/` for a future-plugin checklist only; no Paper support is added in 1.2.0.
+- Update ignore rules for generated output, private tooling, and local world backups.
+- Integrates the 1.1.0 workflow with the 26.3 and dedicated-server ports from ForceBlend Once.
+- Keeps the ForceBlend name, `forceblend` mod ID, and `backups/forceblend/` backup location.
+- Defaults to once per world, with `run-mode=every-open` and a matching settings choice.
+- Honors legacy `forceblendonce.json` markers and records current completion in `forceblend.json`.
+- Does not record completion when a run fails, has no existing terrain, or leaves deferred work.
+- Replaces the 26.x variable-name injection with a cancellable `openWorld(String, Runnable)` hook.
+- Replaces Swing dialogs with native Minecraft screens, including Mod Menu settings, progress, and completion.
+- Runs client analysis and application off the render thread, then resumes the intercepted world-open call.
+- Extends the Fabric target range through Minecraft 26.3 and adds headless dedicated-server preparation.
+- Adds a separate NeoForge 26.3 build that shares the core, backup, configuration, and client workflow.
+- Requires a full-world backup for every headless application; omits the root runtime `session.lock` from ZIPs.
+- Adds tests for legacy markers, execution modes, deferred completion, mandatory backups, and server paths.
+- Uses CurseForge for new releases and credits both maintainers in loader metadata.
+- Verifies 1.2.0 dedicated-server blending on Fabric 26.2/26.3 and NeoForge 26.3 with a seed-swap control comparison, exact frontier selection, restored-backup region bytes, and once-mode restart checks.
+- Singleplayer and other runtime checks remain pending. See [the measured results](docs/BLEND_TEST_RESULTS.md).
 
 ## 1.1.0-beta.1 - 2026-07-29
 

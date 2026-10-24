@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "id": "forceblend",
+  "version": "${version}",
+  "name": "ForceBlend",
+  "description": "Prepares existing Overworld chunks for Minecraft's native terrain blending after seed, generator, or chunk-layout changes.",
+  "authors": [
+    "Mauro0805",
+    "SasnycoN"
+  ],
+  "license": "MIT",
+  "environment": "*",
+  "languageAdapters": {
+    "forceblend:reflective": "com.mauro0805.forceblend.client.config.ReflectiveModMenuLanguageAdapter"
+  },
+  "entrypoints": {
+    "server": [
+      "com.mauro0805.forceblend.server.ForceBlendServer"
+    ],
+    "client": [
+      "com.mauro0805.forceblend.client.ForceBlendClient"
+    ],
+    "modmenu": [
+      {
+        "adapter": "forceblend:reflective",
+        "value": "forceblend"
+      }
+    ]
+  },
+  "mixins": [
+    {
+      "config": "forceblend.client.mixins.json",
+      "environment": "client"
+    }
+  ],
+  "depends": {
+    "fabricloader": ">=0.12.12",
+    "minecraft": [
+      ">=1.18 <=1.21.11",
+      ">=26.1 <=26.3"
+    ],
+    "java": ">=17"
+  },
+  "suggests": {
+    "modmenu": "*"
+  }
+}

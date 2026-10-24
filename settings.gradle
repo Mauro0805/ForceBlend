@@ -9,3 +9,6 @@ pluginManagement {
 }
 
 rootProject.name = 'ForceBlend'
+
+includeBuild('fabric') { name = 'ForceBlend-Fabric' }
+includeBuild('neoforge') { name = 'ForceBlend-NeoForge' }

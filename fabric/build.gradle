@@ -1,0 +1,147 @@
+plugins {
+    id 'net.fabricmc.fabric-loom' version '1.17.17'
+    id 'maven-publish'
+}
+
+def sharedProperties = new Properties()
+file('../gradle.properties').withInputStream { sharedProperties.load(it) }
+sharedProperties.each { key, value ->
+    if (!project.hasProperty(key.toString())) {
+        project.ext.set(key.toString(), value)
+    }
+}
+
+version = project.mod_version
+group = project.maven_group
+
+def javaVersion = 17
+def buildJavaVersion = 25
+def realWorldPath = providers.gradleProperty("forceblendWorld")
+def realWorldMinecraftVersion = providers.gradleProperty("forceblendMinecraftVersion")
+def resourceProperties = [
+    "version"          : version.toString(),
+    "minecraft_version": project.minecraft_version.toString(),
+    "loader_version"   : project.loader_version.toString()
+]
+def bundledLicenseName = "LICENSE_${project.archives_base_name}"
+
+base {
+    archivesName = project.archives_base_name
+}
+
+loom {
+    splitEnvironmentSourceSets()
+
+    mods {
+        "forceblend" {
+            sourceSet sourceSets.main
+            sourceSet sourceSets.client
+        }
+    }
+}
+
+repositories {
+    mavenCentral()
+    maven {
+        name = "JitPack"
+        url = "https://jitpack.io"
+    }
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+
+    include(implementation("com.github.Querz:NBT:${project.querz_nbt_version}"))
+    include(implementation("org.lz4:lz4-pure-java:${project.lz4_version}"))
+
+    testImplementation "org.junit.jupiter:junit-jupiter:${project.junit_version}"
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher"
+}
+
+sourceSets.main.java.srcDir '../common/src/main/java'
+sourceSets.main.resources.srcDir '../common/src/main/resources'
+sourceSets.client.java.srcDir '../common/src/client/java'
+sourceSets.test.java.srcDir '../common/src/test/java'
+sourceSets.test.resources.srcDir '../common/src/test/resources'
+sourceSets.test.compileClasspath += sourceSets.client.output
+sourceSets.test.runtimeClasspath += sourceSets.client.output
+
+processResources {
+    inputs.properties(resourceProperties)
+    filteringCharset = "UTF-8"
+    filesMatching("fabric.mod.json") {
+        expand resourceProperties
+    }
+}
+
+
+tasks.withType(JavaCompile).configureEach {
+    it.options.encoding = "UTF-8"
+    it.options.compilerArgs.addAll(["-Xlint:all", "-Xlint:-processing"])
+    it.options.release.set(javaVersion)
+}
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(buildJavaVersion)
+    withSourcesJar()
+}
+
+tasks.register("forceBlendWorldCopyTest", JavaExec) {
+    group = "verification"
+    description = "Validates ForceBlend against a temporary copy of a real Overworld."
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = "com.mauro0805.forceblend.processing.ForceBlendWorldCopyTest"
+    doFirst {
+        if (!realWorldPath.isPresent()) {
+            throw new GradleException("Provide -PforceblendWorld=<path-to-overworld-dimension>")
+        }
+        if (!realWorldMinecraftVersion.isPresent()) {
+            throw new GradleException("Provide -PforceblendMinecraftVersion=<minecraft-version>")
+        }
+        args realWorldPath.get(), realWorldMinecraftVersion.get()
+    }
+}
+
+tasks.register("forceBlendWorldAudit", JavaExec) {
+    group = "verification"
+    description = "Reports chunk statuses and blending markers without modifying the supplied world."
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = "com.mauro0805.forceblend.processing.ForceBlendWorldAudit"
+    doFirst {
+        if (!realWorldPath.isPresent()) {
+            throw new GradleException("Provide -PforceblendWorld=<path-to-world-or-overworld-dimension>")
+        }
+        args realWorldPath.get()
+    }
+}
+
+tasks.named("test") {
+    useJUnitPlatform()
+    testLogging {
+        events "failed", "skipped"
+        exceptionFormat = "full"
+    }
+}
+
+tasks.withType(AbstractArchiveTask).configureEach {
+    preserveFileTimestamps = false
+    reproducibleFileOrder = true
+}
+
+jar {
+    from("../LICENSE.txt") {
+        rename { bundledLicenseName }
+    }
+}
+
+publishing {
+    publications {
+        create("mavenJava", MavenPublication) {
+            artifactId = project.archives_base_name
+            from components.java
+        }
+    }
+}

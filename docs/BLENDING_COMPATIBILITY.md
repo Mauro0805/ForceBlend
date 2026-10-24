@@ -1,5 +1,7 @@
 # Blending compatibility research
 
+Original mod by Mauro0805. Maintained by Mauro0805 and SasnycoN.
+
 ## Why this document exists
 
 This page explains why ForceBlend uses two marker formats and why it marks only complete chunks. MCA Selector is an
@@ -75,7 +77,8 @@ query.
 
 Status filtering and spatial filtering solve separate problems. Status filtering prevents protochunk crashes; spatial
 filtering avoids marking complete terrain that native blending cannot currently consult. ForceBlend recomputes this
-frontier on every open because MCA imports and deletions can change topology without changing the seed or `level.dat`.
+frontier on every requested analysis because MCA imports and deletions can change topology without changing the seed
+or `level.dat`. Once mode skips completed worlds; every-opening mode requests a fresh analysis each time.
 Small imported islands are fully selected, deleted cavities select their surrounding band, and deep interiors remain
 untouched.
 
