@@ -41,3 +41,13 @@ CLAUDE.md
 /fabric/backups/
 /neoforge/backups/
 /paper/backups/
+
+# Project documentation belongs in the separate forceblend-team repository.
+/docs/
+/README.md
+/CHANGELOG.md
+/CONTRIBUTING.md
+/CODE_OF_CONDUCT.md
+/SECURITY.md
+/common/README.md
+/paper/README.md
