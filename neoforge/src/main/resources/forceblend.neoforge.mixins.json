@@ -1,0 +1,12 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.mauro0805.forceblend.neoforge.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "client": [
+    "WorldOpenMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

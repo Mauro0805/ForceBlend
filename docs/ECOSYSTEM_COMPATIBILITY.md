@@ -1,5 +1,9 @@
 # Ecosystem compatibility
 
+Original mod by Mauro0805. Maintained by Mauro0805 and SasnycoN.
+
+The recorded 1.18.2 sessions below used stable ForceBlend 1.0.0. The merged 1.2.0 artifacts need fresh combination tests.
+
 ## Evidence labels
 
 ForceBlend uses the following labels so documentation never implies testing that did not happen:
@@ -15,7 +19,7 @@ These labels keep expectations honest. Exact Minecraft, loader, and mod versions
 
 ## Performance mods
 
-ForceBlend edits closed Overworld region files before the integrated server starts. It does not replace rendering, game
+ForceBlend edits closed Overworld region files before the selected world loads, including the dedicated-server preparation path. It does not replace rendering, game
 logic, the live chunk scheduler, or Minecraft's region classes.
 
 | Mod             | Assessment                  | Reason                                                                                                                                                                          |
@@ -103,7 +107,10 @@ References:
 - [Fabric-supported Minecraft versions](https://docs.fabricmc.net/players/faq)
 - [Fabric intermediary build pipeline](https://wiki.fabricmc.net/documentation%3Abuild_pipelines)
 
-## Forge and NeoForge feasibility
+## Forge and NeoForge
+
+The 1.2.0 integration now provides separate Fabric and NeoForge artifacts from one shared source tree.
+NeoForge currently targets Minecraft 26.3 only. Forge and a combined multi-loader JAR remain unimplemented.
 
 Most of ForceBlend's processing core is already loader-neutral and can be shared. Loader-specific work remains for
 metadata, client lifecycle interception, mappings, build tooling, and validation:

@@ -1,149 +1,141 @@
 # ForceBlend
 
-ForceBlend is a small Fabric client mod and proof of concept for one specific job: preparing existing Overworld chunks
-so Minecraft can use its own terrain blending when new terrain is generated beside them.
+Original mod by Mauro0805. Maintained by Mauro0805 and SasnycoN (valcheffnet on GitHub).
 
-It is useful after changing a world's seed or terrain generator, importing chunks, or deleting areas that will be
-generated again. ForceBlend does not generate terrain, move chunks, or replace Minecraft's blending algorithm.
+ForceBlend prepares existing Overworld chunks so Minecraft can blend newly generated terrain beside them. Use it
+after changing a seed or terrain generator, importing chunks, or deleting areas that will be generated again.
+Minecraft does the terrain generation and blending; ForceBlend prepares the existing side of the border.
 
-> **Keep a restorable backup of any world you care about.** ForceBlend edits Anvil region files. The new backup option
-> makes this easier, but automatic backups are off by default and no tool can replace a tested offline copy.
+Version 1.2.0 brings the 1.1.0 workflow and the ForceBlend Once ports into one codebase. The mod name is **ForceBlend**
+and the mod ID is `forceblend`. Source is maintained in [Mauro0805/ForceBlend](https://github.com/Mauro0805/ForceBlend).
+The 1.2.0 integration is prepared for branch `1.2.0`, based on the `1.1.0` beta.
+The maintainer will push the code and the separate team documentation; this is not a published release.
+Releases are distributed through the existing [CurseForge project](https://www.curseforge.com/minecraft/mc-mods/forceblend-once).
+Older Modrinth files remain historical releases; new releases use CurseForge.
 
-## Release status
+## Choose a build
 
-- **1.0.0** is the stable reference release. It was tested in game and verified working on Minecraft **1.18.2** and
-  **26.2**.
-- **1.1.0-beta.1** adds the confirmation workflow, progress reporting, parallel processing, settings, and integrated
-  backups. Its automated tests pass, but this beta still awaits a fresh in-game test on 1.18.2 and 26.2.
+| Artifact | Target |
+|---|---|
+| `ForceBlend-1.2.0.jar` | Fabric: Minecraft 1.18-1.21.11 and 26.1-26.3 |
+| `ForceBlend-neoforge-1.2.0.jar` | NeoForge 26.3.0.90 or newer within Minecraft 26.3 |
 
-The same JAR declares Fabric compatibility with stable Minecraft 1.18-1.21.11 and 26.1-26.2. Versions other than
-1.18.2 and 26.2 are mapping-audited targets, not personally verified runtime environments. Snapshots and future
-versions are not included.
+Both builds use the same processing code and support local singleplayer and dedicated servers. Fabric API is not
+required. Mod Menu is optional on Fabric. Use the Java version required by the game; the Fabric mod retains Java 17
+bytecode, while the NeoForge build uses Java 25.
 
-ForceBlend is client-side, works only with local singleplayer worlds, and processes only the Overworld. It does not
-touch the Nether, the End, custom dimensions, entities, or POI data.
+**Singleplayer and the remaining version checks are still pending in [the test matrix](docs/COMPATIBILITY.md).**
+Dedicated-server blending, backups, and once-mode restarts were verified with the exact 1.2.0 artifacts on Fabric 26.2,
+Fabric 26.3, and NeoForge 26.3. See [the measured results](docs/BLEND_TEST_RESULTS.md).
+Additional server blending, save/reopen, chunk-limit, every-opening, and actual released-mod migration checks are recorded in
+[the runtime report](docs/RUNTIME_VERIFICATION_1.2.0.md). These do not certify the pending client screens.
+The original 1.0.0 was verified in game on 1.18.2 and 26.2. SasnycoN reported in-game tests of the separate
+ForceBlend Once 26.3 Fabric and NeoForge builds. Those results do not verify the merged artifact.
 
-### Requirements
+## Opening a world
 
-- Fabric Loader 0.12.12 or newer, subject to the Minecraft version's own minimum
-- No Fabric API
-- Mod Menu is optional
-- The Java version already required by Minecraft: Java 17 for older releases, Java 21 for 1.20.5+, and Java 25 for 26.x
+The default is **once per world**. Until preparation completes, selecting a world starts a read-only analysis that
+shows the selected chunks, regions, deferred work, and estimated processing time. You can choose:
 
-## What happens when a world opens
+- **Apply and enter**: prepare the selected chunks and enter.
+- **Back up, apply and enter**: finish a world backup before preparing the chunks.
+- **Enter unchanged**: enter without applying the plan.
+- **Cancel**: return without opening the world.
 
-With the default settings, selecting a local world starts a read-only analysis. It counts the chunks and regions that
-would change, applies the configured per-opening limit, and estimates the processing time. No world file is modified
-during this step.
+Analysis and processing use Minecraft screens, with progress, ETA, active regions, and speed. Preparation runs off the
+render thread, and a completion message appears before entering the world. No Swing dialogs or desktop notifications
+are required. If the native UI cannot initialize, opening is cancelled and the failure is logged.
 
-If there is work to do, ForceBlend shows the result and offers four choices:
+A completed once-per-world run writes `forceblend.json` inside the world. Later openings skip preparation.
+An existing `forceblendonce.json` from ForceBlend Once also counts as completed, including its older non-strict JSON
+format. A failed run or a run with deferred chunks does not write a completion marker. Worlds without existing terrain
+are not marked as completed.
 
-- **Apply and enter** — process the selected chunks, then continue opening the world.
-- **Back up, apply and enter** — create a complete world ZIP first, process the chunks, then enter.
-- **Enter unchanged** — open the world without applying the plan.
-- **Cancel** — return without opening or changing the world.
+Choose **Every opening** when you want subsequent seed changes, imports, or deleted areas to be detected. This mode
+ignores both completion markers. To repeat preparation while keeping once mode, close the game and remove both marker
+files from a disposable world copy first.
 
-If automatic backup is enabled in the settings, either apply choice creates a backup. If the analysis finds nothing to
-change, ForceBlend shows a short notification and opens the world normally.
+## Settings and backups
 
-Large analyses and processing runs use a progress window with percentage, completed chunks, ETA, active region files,
-and current speed. Backup progress shows files and bytes copied. A desktop notification is sent when processing
-finishes where the operating system supports it.
+Edit `<game directory>/config/forceblend.properties`, or use the ForceBlend settings entry in Fabric Mod Menu.
+Settings are read again at the next opening or server start.
 
-The scanner considers only complete chunks within Minecraft's seven-chunk blending reach of missing or incomplete
-terrain. This finds outer borders, holes made by deleted chunks, and isolated imported areas while leaving deep
-interior chunks alone. A per-opening limit defers the remaining eligible chunks until a later opening.
+| Setting | Default | Meaning |
+|---|---|---|
+| `run-mode` | `once` | Use `every-open` to scan at every opening. |
+| `automatic-processing` | `true` | Clients ask before scanning when false; dedicated servers skip processing. |
+| `automatic-backup` | `false` | Clients always back up before applying when true. |
+| `detailed-logging` | `false` | Enable region and chunk diagnostics. |
+| `maximum-chunks-per-run` | `unlimited` | A positive limit defers remaining work to later openings. |
+| `processing-threads` | `all` | Use all processors reported by the JVM, or a smaller positive count. |
 
-Blending is not retroactive. If both sides of a hard border already exist, delete the unwanted new side, open the world
-with ForceBlend, apply the preparation, and only then generate that side again.
+**Dedicated-server runs always create a backup before applying**, even when `automatic-backup=false`.
+The server path does not use client screens. Fabric resolves `level-name` from `server.properties` and honors
+`--world` and `--universe`; NeoForge receives the world path from the server.
 
-## Settings
+Backups go to `<game directory>/backups/forceblend/<world name>/<timestamp>.zip`. Each ZIP contains the complete world
+data except the root `session.lock`, which Minecraft recreates. Files created in the same second receive a numeric
+suffix. Backups must remain outside the source world.
 
-When Mod Menu is installed, its ForceBlend entry opens the settings dialog. Mod Menu is not a dependency; without it,
-the mod keeps working with the defaults and the human-editable file at:
+Keep a restorable offline copy of important worlds. Integrated backups are optional on clients and do not make the
+whole preparation an atomic transaction.
 
-```text
-<game directory>/config/forceblend.properties
-```
+## What changes in the world
 
-| Setting                    |       Default | Behavior                                                                               |
-|----------------------------|--------------:|----------------------------------------------------------------------------------------|
-| Analyze automatically      |            On | Run the read-only analysis after selecting a world. When off, ask before analyzing.    |
-| Automatic backup           |           Off | Create a complete ZIP before every apply action.                                       |
-| Detailed logging           |           Off | Log region-level and chunk-level diagnostic events.                                    |
-| Maximum chunks per opening |     Unlimited | Process everything selected by the frontier scan, or defer work beyond a chosen limit. |
-| Processing threads         | All available | Use the processors reported by the JVM; explicit smaller values are also available.    |
+ForceBlend selects complete chunks within seven chunks of missing or incomplete terrain. This includes outer borders,
+deleted holes, and isolated imports while leaving deep interiors untouched.
 
-Integrated backups are stored under:
+It writes the version-correct `blending_data` marker, invalidates the derived height/light caches of newly prepared
+chunks, and repairs unsafe markers left on incomplete chunks by old development builds. It preserves chunk status,
+`DataVersion`, blocks, structures, entities, and POI data. It processes only Overworld Anvil terrain.
 
-```text
-<game directory>/backups/forceblend/<world name>/<timestamp>.zip
-```
+Changed regions use temporary files, source validation, and replacement. External `.mcc` streams have rollback
+snapshots for ordinary move failures. Earlier regions can already be completed if a later region fails.
 
-Files created in the same second receive a numeric suffix instead of replacing an older backup.
+Blending is not retroactive. If both sides of a hard border exist, remove the disposable new side before preparation
+and generate that side afterward. Terrain generators must retain vanilla Anvil storage and Minecraft's blending path.
+CubicChunks is unsupported.
 
-## What ForceBlend changes
+## Moving from ForceBlend Once
 
-For eligible chunks, ForceBlend:
+Replace the old loader-specific JAR with the matching ForceBlend build. Keep the world and its old
+`forceblendonce.json`; once mode honors that marker. The CurseForge project stays the same, so pack references to
+that project remain usable. Old world-folder region backups are left in place.
 
-- adds the correct `blending_data` marker for the running Minecraft family;
-- removes only the derived `Heightmaps` and `isLightOn` caches when a new marker is written;
-- preserves `DataVersion`, chunk status, blocks, entities, structures, and POI data;
-- repairs unsafe markers left on incomplete chunks by old development builds;
-- writes only regions that actually change.
+## Building and contributing
 
-The core supports GZIP, ZLIB, uncompressed, LZ4, and external `.mcc` chunk streams. Before applying a read-only plan,
-it verifies that the region set, file metadata, Anvil headers, and external chunks still match the analysis. Every
-changed region is built in a temporary file, validated, flushed, and then moved into place. A stale plan or failed
-write stops the world from opening instead of applying uncertain data.
+The project started as a proof of concept. It remains MIT-licensed, free, and available for any modpack without asking
+permission. Forks are welcome. Maintenance, response times, future game versions, and pull-request review are not
+guaranteed.
 
-## Installation
+Mauro0805 owns the repository; SasnycoN has the agreed direct-push workflow. Community contributions can use pull
+requests. See [CONTRIBUTING.md](CONTRIBUTING.md) for the code boundaries.
 
-1. Make a restorable copy of the world.
-2. Put the downloaded ForceBlend JAR in the instance's `mods` folder.
-3. Change the seed or generator, or import/delete the desired chunks while the game is closed.
-4. Open the local world and review the ForceBlend analysis.
-5. Choose how to continue, then generate terrain in the empty area after preparation finishes.
-
-## Project status and community use
-
-ForceBlend began as a proof of concept. Version 1.0.0 is its first stable community release; all earlier numbered
-builds were alpha or beta development builds, including internal builds that lacked a pre-release suffix.
-
-I do not promise future updates, support response times, or compatibility with future Minecraft versions. Issues and
-pull requests are welcome, but they may be reviewed slowly or not at all. Forks are encouraged if you want to continue,
-adapt, or expand the project.
-
-You may include ForceBlend in any modpack without asking for permission. Keep the license and attribution when
-redistributing it. The project is available under the [MIT License](LICENSE.txt).
-
-## Development
-
-The processing, configuration, and backup code targets Java 17 bytecode and does not depend on Minecraft classes. The
-development workspace uses JDK 25 because the current lifecycle adapter compiles against Minecraft 26.2.
+Use JDK 25 and the root wrapper:
 
 ```bash
-./gradlew clean build
+./gradlew build
+./gradlew -p fabric build
+./gradlew -p neoforge build
 ```
 
-The beta JAR is written to `build/libs/ForceBlend-1.1.0-beta.1.jar`.
+The root command builds both loaders; the `-p` commands build one independently.
+Fabric output is in `fabric/build/libs/`; NeoForge output is in `neoforge/build/libs/`. Upload the ordinary JAR, not a sources
+JAR. [Compatibility](docs/COMPATIBILITY.md), [scope](docs/PROJECT_SCOPE.md), [architecture](docs/ARCHITECTURE.md),
+[world-data safety](SECURITY.md), and the [publishing guide](docs/PUBLISHING.md) describe the remaining checks.
 
-To validate against a disposable copy of a real world:
+Third-party notices and licenses are included in the source tree and release JARs. Keep the [MIT license](LICENSE.txt)
+and original copyright when redistributing the mod.
 
-```bash
-./gradlew forceBlendWorldCopyTest -PforceblendWorld=/path/to/world -PforceblendMinecraftVersion=1.18.2
-```
+## Repository layout
 
-## More documentation
+Before publishing, follow [the 1.2.0 maintainer checklist](docs/RELEASE_CHECKLIST.md).
+Development-branch pushes do not certify the remaining gameplay checks.
 
-- [Compatibility and testing](docs/COMPATIBILITY.md)
-- [Project scope](docs/PROJECT_SCOPE.md)
-- [Architecture](docs/ARCHITECTURE.md)
-- [Why the blending markers are safe](docs/BLENDING_COMPATIBILITY.md)
-- [Performance mods, world generators, structures, and other loaders](docs/ECOSYSTEM_COMPATIBILITY.md)
-- [Publishing guide](docs/PUBLISHING.md)
-- [Contributing](CONTRIBUTING.md)
-- [Security and world-data safety](SECURITY.md)
+- [common/](common/README.md): shared processing, backups, configuration, client workflow, and tests.
+- `fabric/`: Fabric entrypoints, mixins, Mod Menu adapter, metadata, and build.
+- `neoforge/`: NeoForge entrypoints, client mixin, metadata, and build.
+- [paper/](paper/README.md): future-plugin checklist only. No Paper artifact or support in 1.2.0.
 
-Third-party libraries keep their own licenses. Their notices and full license texts are included in the source tree and
-inside the release JAR.
+The root Gradle composite build coordinates both independent loader builds. Shared sources compile into each JAR,
+not an extra dependency. Shared version and library settings remain in the root `gradle.properties`.

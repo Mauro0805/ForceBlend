@@ -1,142 +1,25 @@
 plugins {
-    id 'net.fabricmc.fabric-loom' version '1.17.17'
-    id 'maven-publish'
+    id 'base'
 }
 
-version = project.mod_version
-group = project.maven_group
-
-def javaVersion = 17
-def buildJavaVersion = 25
-def realWorldPath = providers.gradleProperty("forceblendWorld")
-def realWorldMinecraftVersion = providers.gradleProperty("forceblendMinecraftVersion")
-def resourceProperties = [
-    "version"          : version.toString(),
-    "minecraft_version": project.minecraft_version.toString(),
-    "loader_version"   : project.loader_version.toString()
-]
-def bundledLicenseName = "LICENSE_${project.archives_base_name}"
-
-base {
-    archivesName = project.archives_base_name
+tasks.named('build') {
+    dependsOn gradle.includedBuild('ForceBlend-Fabric').task(':build')
+    dependsOn gradle.includedBuild('ForceBlend-NeoForge').task(':build')
 }
 
-loom {
-    splitEnvironmentSourceSets()
-
-    mods {
-        "forceblend" {
-            sourceSet sourceSets.main
-            sourceSet sourceSets.client
-        }
-    }
+tasks.named('check') {
+    dependsOn gradle.includedBuild('ForceBlend-Fabric').task(':check')
+    dependsOn gradle.includedBuild('ForceBlend-NeoForge').task(':check')
 }
 
-repositories {
-    mavenCentral()
-    maven {
-        name = "JitPack"
-        url = "https://jitpack.io"
-    }
+tasks.named('clean') {
+    dependsOn gradle.includedBuild('ForceBlend-Fabric').task(':clean')
+    dependsOn gradle.includedBuild('ForceBlend-NeoForge').task(':clean')
 }
 
-dependencies {
-    minecraft "com.mojang:minecraft:${project.minecraft_version}"
-    implementation "net.fabricmc:fabric-loader:${project.loader_version}"
-
-    include(implementation("com.github.Querz:NBT:${project.querz_nbt_version}"))
-    include(implementation("org.lz4:lz4-pure-java:${project.lz4_version}"))
-
-    testImplementation "org.junit.jupiter:junit-jupiter:${project.junit_version}"
-    testRuntimeOnly "org.junit.platform:junit-platform-launcher"
-}
-
-processResources {
-    inputs.properties(resourceProperties)
-    filteringCharset = "UTF-8"
-    duplicatesStrategy = DuplicatesStrategy.INCLUDE
-
-    // Keep fabric.mod.json in a separate copy spec so IntelliJ does not report a duplicate resource.
-    with copySpec {
-        from("src/main/resources") {
-            include "fabric.mod.json"
-            expand resourceProperties
-        }
-    }
-
-    // Copy every other resource without applying placeholder expansion.
-    from("src/main/resources") {
-        exclude "fabric.mod.json"
-    }
-}
-
-
-tasks.withType(JavaCompile).configureEach {
-    it.options.encoding = "UTF-8"
-    it.options.compilerArgs.addAll(["-Xlint:all", "-Xlint:-processing"])
-    it.options.release.set(javaVersion)
-}
-
-java {
-    toolchain.languageVersion = JavaLanguageVersion.of(buildJavaVersion)
-    withSourcesJar()
-}
-
-tasks.register("forceBlendWorldCopyTest", JavaExec) {
-    group = "verification"
-    description = "Validates ForceBlend against a temporary copy of a real Overworld."
-    dependsOn testClasses
-    classpath = sourceSets.test.runtimeClasspath
-    mainClass = "com.mauro0805.forceblend.processing.ForceBlendWorldCopyTest"
-    doFirst {
-        if (!realWorldPath.isPresent()) {
-            throw new GradleException("Provide -PforceblendWorld=<path-to-overworld-dimension>")
-        }
-        if (!realWorldMinecraftVersion.isPresent()) {
-            throw new GradleException("Provide -PforceblendMinecraftVersion=<minecraft-version>")
-        }
-        args realWorldPath.get(), realWorldMinecraftVersion.get()
-    }
-}
-
-tasks.register("forceBlendWorldAudit", JavaExec) {
-    group = "verification"
-    description = "Reports chunk statuses and blending markers without modifying the supplied world."
-    dependsOn testClasses
-    classpath = sourceSets.test.runtimeClasspath
-    mainClass = "com.mauro0805.forceblend.processing.ForceBlendWorldAudit"
-    doFirst {
-        if (!realWorldPath.isPresent()) {
-            throw new GradleException("Provide -PforceblendWorld=<path-to-world-or-overworld-dimension>")
-        }
-        args realWorldPath.get()
-    }
-}
-
-tasks.named("test") {
-    useJUnitPlatform()
-    testLogging {
-        events "failed", "skipped"
-        exceptionFormat = "full"
-    }
-}
-
-tasks.withType(AbstractArchiveTask).configureEach {
-    preserveFileTimestamps = false
-    reproducibleFileOrder = true
-}
-
-jar {
-    from("LICENSE.txt") {
-        rename { bundledLicenseName }
-    }
-}
-
-publishing {
-    publications {
-        create("mavenJava", MavenPublication) {
-            artifactId = project.archives_base_name
-            from components.java
-        }
+['test', 'forceBlendWorldCopyTest', 'forceBlendWorldAudit'].each { taskName ->
+    tasks.register(taskName) {
+        group = 'verification'
+        dependsOn gradle.includedBuild('ForceBlend-Fabric').task(":${taskName}")
     }
 }

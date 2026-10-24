@@ -1,108 +1,67 @@
 # Project scope
 
-ForceBlend is a focused proof of concept maintained for the community. Its job is to prepare the existing side of an
-Overworld border so Minecraft can apply native terrain blending when the missing side is generated.
+Original mod by Mauro0805. Maintained by Mauro0805 and SasnycoN.
 
-Version 1.0.0 is the stable reference release. Version 1.1.0-beta.1 improves the workflow around the same core job; it
-does not turn ForceBlend into a terrain editor or generator.
+ForceBlend prepares the existing side of an Overworld border for Minecraft's native terrain blending.
+Version 1.2.0 integrates the 1.1.0 workflow with the 26.3, dedicated-server, and NeoForge ports.
 
-## In scope
+## Supported boundaries
 
-- One Fabric JAR for stable Minecraft 1.18-1.21.11 and 26.1-26.2.
-- Local singleplayer worlds and existing Overworld terrain.
-- Legacy root and modern nested Overworld paths using vanilla Anvil storage.
-- GZIP, ZLIB, uncompressed, LZ4, and external `.mcc` chunk streams.
-- The 1.18 `old_noise` marker and the 1.19+ section-range marker.
-- Complete chunks with normalized status `minecraft:full`.
-- A seven-chunk frontier around missing or incomplete terrain.
-- Outer borders, deleted cavities, and imported terrain islands.
-- Safe removal of old ForceBlend markers from incomplete chunks.
-- A read-only pre-analysis with exact work counts and an approximate duration.
-- Explicit choices to apply, apply with a backup, enter unchanged, or cancel.
-- Optional complete world backups before modification.
-- Deterministic per-opening chunk limits and continuation on later opens.
-- Parallel region work with progress, ETA, active regions, and completion notification.
-- Optional Mod Menu settings and a standalone configuration file.
-- Stale-plan validation and transactional region replacement.
+- Fabric targets stable Minecraft 1.18-1.21.11 and 26.1-26.3 in one Fabric artifact.
+- NeoForge has a separate artifact for Minecraft 26.3 and NeoForge 26.3.0.90 or newer in that family.
+- Singleplayer and dedicated servers use the same analysis and application core.
+- Storage is vanilla Overworld Anvil, including root and nested Overworld layouts.
+- Compression support remains GZIP, ZLIB, uncompressed, LZ4, and external `.mcc` streams.
+- Only complete chunks near missing or incomplete terrain become blending sources.
+- Nether, End, custom dimensions, entities, POIs, and structure data are not processed.
+- Terrain generation, chunk deletion/import, seed editing, retroactive blending, and CubicChunks remain outside the scope.
+- Forge, snapshots, and unreviewed future versions are not supported by this integration.
 
-## Out of scope
+## Execution contract
 
-ForceBlend does not:
+The mod ID is `forceblend`; the display name is ForceBlend. The development branch is `1.2.0`, starting from the
+`1.1.0` beta.
+Run mode defaults to `once`, with an `every-open` option.
 
-- process the Nether, the End, custom dimensions, multiplayer, or dedicated servers;
-- edit entities, POI data, structures, blocks, the seed, or generator settings;
-- select, delete, move, or regenerate chunks;
-- repair corrupt worlds or blend a border after both sides have already generated;
-- support CubicChunks or another non-vanilla chunk storage model;
-- guarantee clean structure placement where old and new terrain meet;
-- promise snapshots, future Minecraft versions, ongoing maintenance, or fast support;
-- promise a particular speedup from parallel processing.
+In once mode, `forceblend.json` or the legacy `forceblendonce.json` skips the world before analysis. Completion is recorded
+only after a successful application with existing chunks and no deferred work. Failures and chunk limits must not cause
+unfinished work to be marked complete. Every-opening mode ignores completion markers.
 
-## World-open contract
+Clients retain read-only analysis and the four choices: apply, back up and apply, enter unchanged, or cancel.
+No backup or world write occurs while a client is waiting for that decision. Automatic analysis can be disabled.
+Native Minecraft screens expose real work counts, progress, ETA, active regions, and a completion message. Analysis and
+application do not block the render thread. No desktop UI is required, and a failed UI initialization cancels opening.
 
-Automatic analysis is on by default. The analysis may read and decompress chunk data, but it must not alter the world.
-Its result is kept as an immutable in-memory plan and used by the confirmation dialog.
+Dedicated servers have no dialogs. With automatic processing enabled, they analyze, complete a world backup, validate,
+apply, and log. Backup failure stops the run before terrain writes. Disabling automatic processing skips that server
+run. Backups always use `<game>/backups/forceblend/<world>/`.
 
-The four post-analysis choices have strict meanings:
+## Data rules
 
-- **Apply and enter:** validate the plan, process its selected chunks, then continue opening.
-- **Back up, apply and enter:** complete a world ZIP first, then validate and apply.
-- **Enter unchanged:** discard the plan and open without modification.
-- **Cancel:** discard the plan and stop this world-open attempt.
+The scanner validates Anvil entries, compression, NBT roots, coordinates, `DataVersion`, and chunk status.
+Pre-1.18 data remains the responsibility of Minecraft's native migration. Only `full` chunks within the seven-chunk
+frontier can receive a blending marker. Unsafe legacy markers on incomplete chunks can be removed independently.
 
-When automatic analysis is disabled, ForceBlend asks whether to analyze, enter unchanged, or cancel before scanning.
-When automatic backup is enabled, every apply action must complete a backup first.
+Minecraft 1.18-1.18.2 uses `blending_data: {old_noise: 1b}`; 1.19+ uses section bounds.
+The source `DataVersion` and status are preserved. Height/light caches are invalidated only for newly prepared chunks.
+No region without selected changes is replaced.
 
-## Chunk rules
+Parallel selection remains deterministic, with one writer per region. Stale plans are rejected before writes.
+Region replacement and external-stream rollback are per-region safeguards, not an all-world transaction.
 
-The scanner validates a chunk's Anvil location, stream length, compression, NBT root, coordinates, `DataVersion`, and
-status before a plan is eligible for application.
+Backups preserve world data except the runtime root `session.lock`. ZIPs are published only when complete, never
+overwrite an older backup, reject unsafe paths and links, and are discarded if source metadata changes.
 
-- Chunks older than DataVersion 2844 are left for Minecraft's native migration.
-- Only complete `full` chunks can become blending sources.
-- The marker format comes from the running Minecraft version, not from the chunk's `DataVersion`.
-- ForceBlend never changes `DataVersion` or promotes a chunk's status.
-- A complete chunk is eligible only if missing or incomplete terrain exists within seven chunks on either axis.
-- Deep-interior chunks remain untouched.
-- Unsafe markers on incomplete chunks are removed independently of frontier selection.
-- `Heightmaps` and `isLightOn` are removed only when an eligible marker is created or replaced.
-- A configured limit chooses a deterministic prefix of eligible work; the remainder is reported as deferred.
+## Release boundary
 
-Minecraft 1.18-1.18.2 receives:
+The target is 1.2.0, distributed through CurseForge from Mauro0805/ForceBlend. Both maintainers are credited in loader
+metadata. The existing MIT license and original copyright are retained.
 
-```snbt
-blending_data: { old_noise: 1b }
-```
+Merged-build gameplay checks remain required. Results from stable 1.0.0 and the separate ForceBlend Once builds are
+historical evidence, not a test certificate for 1.2.0. No update schedule or performance speedup is promised.
 
-Minecraft 1.19 and newer receives:
+## Source layout and future Paper work
 
-```snbt
-blending_data: {
-    min_section: <minimum section, at most -4>,
-    max_section: <maximum section, at least 20>
-}
-```
-
-## Safety invariants
-
-- Never write during pre-analysis or while waiting for a user choice.
-- Never follow writable region, external-chunk, backup-source, or backup-destination symbolic links.
-- Never apply an analysis after its region set or captured snapshots become stale.
-- Never let two workers write the same region file.
-- Never replace an unchanged region.
-- Never publish an incomplete backup or silently overwrite an older one.
-- Stop world loading when analysis, backup, validation, or application cannot finish safely.
-- Enable exactly one lifecycle adapter for the running game.
-- Recompute topology on every requested analysis instead of trusting remembered seed or state information.
-
-These safeguards do not replace an offline backup. Power loss, filesystem failure, third-party editors, and unknown mod
-interactions remain outside the program's control.
-
-## Release and community policy
-
-Stable 1.0.0 is verified in game on Minecraft 1.18.2 and 26.2. The 1.1.0-beta.1 automated suite passes, but the beta
-still awaits fresh in-game tests on those versions. Other declared versions remain mapping-audited until reproducible
-runtime results are supplied.
-
-The author may not publish future releases. Anyone may fork, maintain, or adapt the project under the MIT License, and
-the mod may be redistributed in modpacks without prior permission. Pull requests are welcome but may be reviewed rarely.
+`common/` contains shared sources; `fabric/` and `neoforge/` contain separate loader adapters and builds.
+The root build coordinates both artifacts. `paper/README.md` reserves a future-plugin checklist only.
+Paper implementation, dependencies, runtime support, and publication are outside the 1.2.0 release.

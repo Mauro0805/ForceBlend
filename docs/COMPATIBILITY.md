@@ -1,83 +1,88 @@
 # Compatibility and testing
 
-ForceBlend uses one Java 17 processing core and five small Fabric lifecycle adapters. At startup, the mod enables only
-the adapter that matches the running Minecraft family.
+Original mod by Mauro0805. Maintained by Mauro0805 and SasnycoN.
 
-## Read the status before choosing a build
+## Artifacts and evidence
 
-| Build            | Status           | Evidence                                                                        |
-|------------------|------------------|---------------------------------------------------------------------------------|
-| **1.0.0**        | Stable reference | Verified in game on Minecraft **1.18.2** and **26.2**.                          |
-| **1.1.0-beta.1** | Pre-release      | Automated tests pass; fresh in-game tests on 1.18.2 and 26.2 are still pending. |
+| Build | Target | Verification |
+|---|---|---|
+| ForceBlend 1.0.0 | Fabric 1.18.2 and 26.2 | Previously verified in game. |
+| ForceBlend 1.1.0-beta.1 | Fabric declared stable ranges | Automated coverage; gameplay retest pending. |
+| ForceBlend Once 1.1.0 | Separate Fabric/NeoForge 26.3 ports | SasnycoN's supplied test record. |
+| Merged ForceBlend 1.2.0 Fabric | 1.18-1.21.11 and 26.1-26.3 | Builds and tests pass; dedicated-server blending verified on 1.18.2, 26.1.2, 26.2, and 26.3. Singleplayer and other versions pending. |
+| Merged ForceBlend 1.2.0 NeoForge | 26.3, NeoForge 26.3.0.90+ within that family | Build passes; dedicated-server blending verified on 26.3. Singleplayer pending. |
 
-“Included in the metadata range” is not the same as “verified in game.” The project uses these terms consistently:
+One shared source tree produces separate Fabric and NeoForge JARs. NeoForge is not claimed to support the older Fabric
+range. Snapshots, pre-releases, release candidates, Forge, and future versions are excluded.
 
-| Term               | Meaning                                                                                              |
-|--------------------|------------------------------------------------------------------------------------------------------|
-| Verified in game   | The exact build loaded, processed a real world, opened it, and its result was observed in Minecraft. |
-| Mapping-audited    | The lifecycle target and marker family were reviewed, but no full gameplay test was recorded.        |
-| Automated coverage | Loader-neutral behavior passed tests outside a complete gameplay session.                            |
+Fabric's 26.x hook targets `openWorld(String, Runnable)` by descriptor. It no longer depends on a local-variable name.
+The older Fabric release families retain their version-selected intermediary adapters.
 
-Automated coverage is useful evidence for the shared core, but it cannot confirm that every client lifecycle hook,
-desktop dialog, mod combination, or generated border behaves correctly at runtime.
+## Execution environments
 
-## Declared Minecraft range
+Singleplayer uses native Minecraft confirmation, settings, and progress screens. It does not depend on AWT or Swing;
+Minecraft's `java.awt.headless=true` setting no longer bypasses confirmation. If native UI initialization fails, opening
+is cancelled and the failure is logged. Fabric Mod Menu is optional; properties-file settings work on both loaders.
 
-| Minecraft      | Runtime evidence from stable 1.0.0 | Adapter notes                                                  |
-|----------------|------------------------------------|----------------------------------------------------------------|
-| **1.18.2**     | **Verified in game**               | Uses the 1.18 `old_noise` marker.                              |
-| **26.2**       | **Verified in game**               | Uses the Mojang-official `WorldOpenFlows` family.              |
-| 1.18-1.18.1    | Mapping-audited                    | Shares the 1.18 marker and lifecycle family.                   |
-| 1.19-1.20.2    | Mapping-audited                    | Uses the first intermediary `WorldOpenFlows` family.           |
-| 1.20.3-1.20.4  | Mapping-audited                    | Uses the intermediary backup/open-flow family.                 |
-| 1.20.5-1.21.11 | Mapping-audited                    | Uses the later intermediary `WorldOpenFlows.openWorld` family. |
-| 26.1           | Bytecode-audited                   | Shares the official-name adapter family with 26.2.             |
+Dedicated servers run the headless preparation path before world loading. They never use desktop dialogs and always
+create a backup before applying. Fabric reads `server.properties` and its world/universe launch options. NeoForge uses
+`ServerAboutToStartEvent` for dedicated servers and a cancellable client hook for integrated worlds.
 
-The metadata range is closed at 1.21.11 and 26.2. Snapshots, pre-releases, release candidates, and future Minecraft
-versions are not included.
+Run mode defaults to once. The existing `forceblendonce.json` marker is honored; every-opening mode ignores markers.
+Limited runs only record completion after no planned work remains.
 
-The 1.1 beta retains this declared range, but none of its new confirmation, backup, progress, configuration, or
-parallel-processing behavior should be described as verified in game until the beta itself is tested.
+## Automated coverage
 
-## Runtime requirements
+The shared suite exercises topology, complete-chunk eligibility, marker formats, compression, malformed inputs,
+idempotence, transactional replacement, external-stream rollback, read-only plans, deterministic limits, progress,
+configuration persistence, backup safety, and source-change detection.
 
-- Fabric Loader; Fabric API is not required.
-- A local singleplayer world with vanilla Anvil Overworld storage.
-- A graphical desktop environment for confirmation, progress, and settings dialogs.
-- Mod Menu only if the user wants its settings entry; ForceBlend does not require it.
+Integration tests also exercise mandatory headless backups, restore bytes from the ZIP, first/second openings,
+legacy-marker migration, every-opening mode, deferred completion, disabled processing, absent worlds, failed backups,
+26.x version boundaries, and server world-path resolution.
 
-If a desktop UI cannot be created, ForceBlend chooses the safe fallback and opens the world unchanged rather than
-applying without confirmation.
+Client tests verify both Screen lifecycle naming families, widget reinitialization callbacks, replayed world-open
+arguments, bypassing the hook during continuation, and propagating Minecraft failures without leaking the bypass.
 
-## Automated coverage in the 1.1 beta
+Build success does not prove lifecycle order, native screens, or terrain appearance inside a running game.
 
-The suite covers both the established terrain rules and the new workflow, including:
+## Measured dedicated-server blending
 
-- marker format, complete-chunk eligibility, seven-chunk frontier selection, imports, and deleted cavities;
-- malformed data, compression formats, external chunks, idempotence, and transactional failure;
-- read-only planning, deterministic per-opening limits, and reuse of the plan during application;
-- parallel region execution and progress snapshots;
-- stale region-set, file, header, chunk-outcome, and external-payload rejection;
-- configuration defaults, parsing, persistence, and atomic replacement;
-- complete ZIP creation, collision handling, cancellation, cleanup, path safety, and source-change detection.
+Additional Fabric 1.18.2 and 26.1.2 startup/save/reopen, repeated-work, chunk-limit, and actual released-mod migration
+results are recorded in [the runtime verification report](RUNTIME_VERIFICATION_1.2.0.md).
+Measured mean border steps also fell from 37.99 to 1.63 blocks on 1.18.2 and from 36.38 to 1.41 on 26.1.2.
+These server cases do not complete the singleplayer checkboxes below.
 
-Real-save copy tests remain important because they exercise actual Anvil data without modifying the supplied source.
-They still do not replace a gameplay test for the exact beta artifact.
+The exact 1.2.0 artifacts reduced mean old/new border height steps from 36.57 to 1.54 blocks on Fabric 26.2,
+37.15 to 1.90 on Fabric 26.3, and 37.15 to 1.91 on NeoForge 26.3. Each comparison measured 1,536 border pairs.
+Selection, restored backup bytes, and once-mode restarts also passed. See [the test report](BLEND_TEST_RESULTS.md).
+These server tests do not verify native client screens.
 
-## Community test checklist for 1.1.0-beta.1
+## Merged 1.2.0 gameplay matrix
 
-Use a disposable copy, then report what actually happened:
+Use disposable worlds and record exact game, loader, Java, operating-system, and mod versions.
 
-1. Generate a visible area, close the game, and make an offline backup.
-2. Change the seed or generator, or delete/import chunks in the copy.
-3. Install the beta and select the world.
-4. Confirm that the read-only analysis reports plausible chunk and region counts.
-5. Test **Enter unchanged** and verify that the world opens without ForceBlend writes.
-6. Reopen, choose a backup-and-apply path, and verify the ZIP and progress display.
-7. Generate the empty border, inspect the transition, save, and reopen.
-8. Repeat with a chunk limit if practical and confirm deferred work appears on a later opening.
-9. Check the log for ForceBlend errors.
+- [ ] Fabric 1.18.2: prepare old terrain, generate a border, play, save, and reopen.
+- [ ] Fabric 26.1.2, 26.2, and 26.3: verify the shared 26.x hook and all four choices.
+- [x] Fabric 26.2 and 26.3 dedicated servers: measured blending, preparation before level loading, restored backup region bytes, and once-mode skipping.
+- [ ] NeoForge 26.3 singleplayer: verify all four choices, especially Cancel returning to world selection.
+- [x] NeoForge 26.3 dedicated server: measured blending, preparation before level loading, restored backup region bytes, and once-mode skipping.
+- [x] Actual released ForceBlend Once 1.1.0 world: Fabric 26.3 dedicated-server once mode skips preparation and creates no new backup or marker.
+- [ ] Repeat actual legacy-world skipping through the singleplayer client path.
+- [x] Fabric 1.18.2 and 26.1.2 dedicated servers: every-opening mode detects a deleted area on a later startup.
+- [x] Fabric 1.18.2 and 26.1.2 dedicated servers: a 128-chunk limit defers completion until the final application.
+- [ ] Repeat every-opening mode and chunk-limited continuation through the singleplayer client screens.
+- [x] Restore generated test-world backups separately and compare original region bytes; restored worlds were not launched afterward.
+- [x] Run the shared automated suite (64 tests) and both loader builds.
 
-Include the exact ForceBlend, Minecraft, Fabric Loader, Java, operating-system, Mod Menu, and other mod versions. The
-[ecosystem assessment](ECOSYSTEM_COMPATIBILITY.md) discusses performance mods, terrain generators, structures,
-snapshots, Forge, and NeoForge separately; it should not be read as an unrecorded runtime guarantee.
+[The ecosystem notes](ECOSYSTEM_COMPATIBILITY.md) retain the original performance-mod and generator assessments.
+Those historical tests do not verify new mod/version combinations or the merged artifact.
+
+## Repository reorganization
+
+Sources now live in `common/`, `fabric/`, and `neoforge/`. Fabric output moves to `fabric/build/libs/`.
+`paper/` is a future-plugin checklist, not a supported runtime. Historical blend-test measurements refer to
+exact JAR hashes recorded in the report, not automatically to every rebuilt artifact.
+
+After this layout-only change, the root and independent loader builds passed and all 64 tests passed.
+Both release JAR SHA-256 hashes match the earlier blend-test artifacts exactly. No new gameplay test is claimed.

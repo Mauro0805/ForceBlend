@@ -1,7 +1,12 @@
+# Directory rules apply at every depth, including fabric/ and neoforge/.
 .gradle/
 .idea/
 .fleet/
 .vscode/
+.eclipse/
+.settings/
+.classpath
+.project
 build/
 out/
 run/
@@ -12,3 +17,27 @@ logs/
 *.log
 hs_err_pid*
 replay_pid*
+.team/
+
+# Local compiler output and development tooling
+bin/
+*.class
+*.hprof
+.DS_Store
+Thumbs.db
+
+# Private maintainer and agent files
+AGENTS.md
+CLAUDE.md
+.agents/
+.claude/
+.codex/
+.cursorrules
+.cursor/
+.aider*
+
+# Local world backups (not source or test fixtures)
+/backups/
+/fabric/backups/
+/neoforge/backups/
+/paper/backups/

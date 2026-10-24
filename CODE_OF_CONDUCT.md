@@ -1,5 +1,7 @@
 # Community Guidelines
 
+Original mod by Mauro0805. Maintained by Mauro0805 and SasnycoN.
+
 ForceBlend aims to provide a constructive, technically focused environment for users and contributors.
 
 - Be respectful and patient.

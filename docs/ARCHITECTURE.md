@@ -1,162 +1,127 @@
 # Architecture
 
-## Design goals
+Original mod by Mauro0805. Maintained by Mauro0805 and SasnycoN.
 
-ForceBlend keeps Minecraft-version hooks small and keeps risky world-data work in a loader-neutral Java 17 core. The
-1.1 workflow also enforces a simple rule: analysis and user choice happen before backup or modification.
+## Shared preparation
+
+`WorldPreparer` is the loader-neutral coordinator for analysis, backups, application, and completion state.
+`WorldProcessor` and `RegionScanner` retain the existing Anvil/NBT behavior. Fabric and NeoForge produce separate JARs
+from the same shared source files.
 
 ```mermaid
 flowchart TD
-    A["Version-selected Fabric mixin"] --> B["WorldOpenHandler"]
-    B --> C["ForceBlendConfig"]
-    B --> D["Read-only WorldProcessor.analyze"]
-    D --> E["Immutable ProcessingPlan"]
-    E --> F["Confirmation dialog"]
-    F -->|"Enter unchanged or cancel"| G["Discard plan; no writes"]
-    F -->|"Backup requested"| H["WorldBackupService"]
-    F -->|"Apply"| I["Stale-plan validation"]
-    H --> I
-    I --> J["Parallel per-region application"]
-    J --> K["Transactional region replacement"]
-    D --> L["Progress tracker"]
-    I --> L
-    J --> L
-    H --> L
-    L --> M["Progress window and notification"]
+    A["Fabric or NeoForge client hook"] --> B["WorldOpenWorkflow"]
+    C["Fabric server initializer"] --> D["WorldPreparer.prepare"]
+    E["NeoForge dedicated-server event"] --> D
+    B --> F["Read-only analysis and confirmation"]
+    F --> G["WorldPreparer.apply"]
+    D --> G
+    G --> H["Optional client or required server backup"]
+    H --> I["Stale-plan validation and parallel region writes"]
+    I --> J["Completion state only when no work is deferred"]
 ```
 
-## Compatibility shell
+## Loader boundaries
 
-`ForceBlendMixinPlugin` reads the stable Minecraft version before targets are resolved and enables exactly one adapter:
+Fabric selects one client adapter before resolving Minecraft targets:
 
-| Version        | Target namespace    | Entry point                |
-|----------------|---------------------|----------------------------|
-| 1.18-1.18.2    | Fabric intermediary | `class_310.method_29606`   |
-| 1.19-1.20.2    | Fabric intermediary | `class_7196.method_41894`  |
-| 1.20.3-1.20.4  | Fabric intermediary | `class_7196.method_54618`  |
-| 1.20.5-1.21.11 | Fabric intermediary | `class_7196.method_57784`  |
-| 26.1-26.2      | Mojang official     | `WorldOpenFlows.openWorld` |
+| Minecraft | Target |
+|---|---|
+| 1.18-1.18.2 | `class_310.method_29606` |
+| 1.19-1.20.2 | `class_7196.method_41894` |
+| 1.20.3-1.20.4 | `class_7196.method_54618` |
+| 1.20.5-1.21.11 | `class_7196.method_57784` |
+| 26.1-26.3 | `WorldOpenFlows.openWorld(String, Runnable)` |
 
-The adapters capture only the world directory name and ask `WorldOpenHandler` whether the intercepted open should
-continue. They contain no Minecraft parameter or return types, which limits verifier failures when class signatures
-change across the declared range.
+The 26.x hook captures arguments by descriptor and supports cancellation. It does not use local-variable names.
+The Fabric client bridge resolves the save path, then calls the shared `WorldOpenWorkflow`.
 
-The client workflow uses JDK desktop dialogs instead of Minecraft screen classes. This is deliberate: 1.18-1.21 uses
-intermediary client names while 26.x exposes Mojang names, and one screen implementation could not safely link against
-both. If the desktop UI is unavailable, the handler chooses the safe fallback and leaves the world unchanged.
+The Fabric dedicated-server entrypoint reads `server.properties`, honors `--world` and `--universe`, and invokes the
+headless coordinator before level loading. It contains no Minecraft method signatures.
 
-Mod Menu support uses a reflective language adapter. Installing Mod Menu adds a settings entry; omitting it does not
-remove any processing capability or introduce a missing-class dependency.
+NeoForge uses `ServerAboutToStartEvent` for dedicated servers. The event is not cancellable, so integrated worlds use
+a client mixin before `WorldOpenFlows.openWorld`. This preserves Enter unchanged and Cancel without turning a user's
+choice into a server startup exception. The server event skips integrated servers to avoid processing twice.
 
-## Configuration boundary
+The shared screens, workflow, and configuration controller have no Fabric class references. The Fabric initializer,
+mixin family, Mod Menu bridge, and server entrypoint live only in `fabric/src/`, not in the shared tree. Its client mixin is listed only
+in the client section of its mixin configuration, keeping native client classes out of dedicated-server startup.
 
-`ForceBlendConfig` is an immutable loader-neutral record. `ForceBlendConfigStore` persists it as a small properties file
-at `<game>/config/forceblend.properties`.
+Client hooks cancel the original call while read-only analysis runs on a background coordinator. Native screens retain
+the four choices. Applying runs backup and processing off the render thread; the client thread polls immutable progress
+snapshots once per tick. Continuing replays the original call and its arguments with a scoped bypass, so it is not
+intercepted a second time.
 
-Missing files receive the documented defaults. Invalid individual values fall back to defaults with warnings. Saves
-are written to a sibling temporary file, forced to disk, and atomically replace the old file where the filesystem
-supports it. The previous file remains intact if replacement fails.
+`NativeScreen` resolves the official or intermediary namespace and generates a small Screen subclass for `init`, `tick`,
+and close callbacks. Widgets, rendering, focus, and input remain Minecraft's. This avoids linking one Fabric JAR to the
+different rendering signatures across versions. It uses the ASM runtime supplied by the loader, not an extra bundled
+library. Neither the workflow nor Mod Menu settings uses Swing or changes the global AWT headless flag.
 
-The defaults are automatic analysis on, automatic backup off, detailed logging off, unlimited chunks, and all
-processors reported by the JVM. A numeric worker setting never deliberately oversubscribes the available processors.
+## Configuration and completion
 
-## Read-only planning
+`ForceBlendConfigStore` persists `config/forceblend.properties` through a flushed temporary file and replacement.
+The defaults are once per world, automatic analysis on, optional client backup off, detailed logs off, unlimited chunks,
+and all processors reported by the JVM.
 
-`WorldProcessor.analyze` resolves only the selected Overworld `region` directory and delegates to `RegionScanner`. The
-analysis phase:
+`WorldPreparationState` accepts the current `forceblend.json` and legacy `forceblendonce.json` markers. The legacy file
+is recognized by presence because old releases emitted non-strict JSON. Unsafe marker paths are rejected.
 
-1. lists region files in stable filename order;
-2. reads and validates their headers and chunk streams in parallel;
-3. classifies complete terrain, incomplete terrain, existing valid markers, and unsafe markers;
-4. builds compact world topology with `ChunkPositionIndex`;
-5. selects the seven-chunk frontier and repairs that are actually eligible;
-6. applies the configured limit in deterministic region/chunk order;
-7. captures region snapshots and returns an immutable `ProcessingPlan`.
+In once mode, the marker is checked before analysis and written atomically only after a successful application with
+existing terrain and zero deferred chunks. Failed backups, failed application, absent terrain, and limited unfinished
+runs do not create the marker. Every-opening mode ignores completion markers.
 
-No file is written in this phase. The plan carries the exact selected and deferred counts, affected regions, expected
-chunk outcomes, work-size inputs, and analysis duration. The initial apply estimate is derived from work observed on the
-current machine; the client uses a conservative fallback when the sample is insufficient. It is an estimate, not a
-benchmark or deadline.
+## Read-only plans and parallel writes
 
-Keeping the plan in memory lets the confirmation dialog pause the workflow without forcing a second full analysis.
+Analysis validates region headers and chunk streams, builds the complete-terrain index, selects the seven-chunk
+frontier, and applies deterministic limits in stable region/chunk order. It retains metadata, bitsets, and expected
+outcomes in an immutable plan rather than retaining entire worlds of decoded NBT.
 
-## Deterministic parallel execution
+Analysis, stale-plan validation, and application run independent region tasks in bounded worker pools. One worker owns
+each region. Results keep selection order regardless of task scheduling, and outstanding tasks finish or are cancelled
+before control returns after a failure.
 
-Analysis, validation, and application submit independent region tasks to a bounded worker pool. The default worker
-count is every processor available to the JVM; users can choose a smaller number. A region appears at most once in each
-task set, so two workers never write the same `.mca` file.
+Before writes, the region set, source metadata, Anvil header digests, and external payload digests must still match.
+Selected chunks are decoded again and must produce the predicted outcome. Confirmation does not require a second
+complete NBT analysis.
 
-Selection and chunk-limit ordering happen before workers run. Results are joined and reduced after the tasks finish, so
-thread scheduling does not decide which chunks are deferred. A failure cancels outstanding work and is surfaced to the
-world-open handler.
+`ChunkModifier` is the only class that mutates chunk NBT. New blending markers invalidate only derived height/light
+caches. Unselected chunk payloads and timestamps are preserved. Changed regions use temporary assembly, forced writes,
+source validation, and replacement.
 
-Progress snapshots are immutable and include phase, total/completed regions, total/completed chunks, affected chunks,
-active regions, and elapsed time. The UI derives rolling ETA and throughput from those snapshots and throttles visual
-updates. Region and chunk event detail is generated only when detailed logging is enabled.
+Changed external `.mcc` files and their `.mca` region are snapshotted by hard link with a copy fallback. Ordinary move
+failures restore the snapshots. This is a per-region safeguard: an earlier region is not rolled back when another
+region fails. Power loss or concurrent external editors are outside that guarantee.
 
-## Stale-plan validation
+## Backups and progress
 
-A user may spend time reading the confirmation dialog or creating a backup, so application cannot assume the analysis
-is still current. Before any region worker writes, ForceBlend validates the complete planned region set and each
-captured snapshot.
+The coordinator completes backups before application. Dedicated servers require them regardless of the optional client
+backup preference. `WorldBackupService` writes complete world ZIPs under `backups/forceblend/<world>/`, excludes the
+runtime root `session.lock`, verifies the source manifest, and publishes a collision-safe timestamp only on success.
+Partial archives are removed on ordinary failure.
 
-Snapshots cover file size and modification time, the validated Anvil header digest, and digests for external chunk
-payloads. During application, selected chunks are decoded again and must still produce the outcome predicted by the
-plan. A mismatch raises a stale-plan error and stops world opening instead of applying uncertain data.
+Core progress snapshots contain phase, real region/chunk counts, active regions, and elapsed time. Client screens read
+the latest snapshot without queuing every worker update. Headless runs log periodic progress, with per-region/per-chunk
+events only when detailed logging is enabled.
 
-## Region transactions
+The initial ETA is an estimate from current analysis work, not a benchmark or completion deadline. Backup time is shown
+separately by file counts and an ETA based on copied bytes. Completion appears in game before world loading resumes.
 
-`ChunkModifier` remains the only production class allowed to mutate chunk NBT. It removes an unsafe legacy marker from
-an incomplete chunk or writes `old_noise: 1b` for Minecraft 1.18-1.18.2 and a section range for Minecraft 1.19+.
-Height/light caches are invalidated only while preparing a complete chunk.
+## Future versions
 
-Each selected source region is read while a compact replacement is assembled in a temporary sibling file. Unselected
-streams are copied without NBT mutation. The replacement is forced to disk and the source snapshot is checked again
-before staged external streams and the temporary region are moved into place. Temporary artifacts are cleaned on
-ordinary failure. Regions with no selected change are never rewritten.
+Audit the exact lifecycle descriptor, Java requirement, storage paths, chunk-status policy, and blending codec before
+extending either loader's declared range. Keep version-specific native types in the adapters. Test the exact artifact
+in game before describing a version as verified.
 
-When a changed chunk uses an external `.mcc` stream, ForceBlend first snapshots the original sidecars and `.mca` by
-hard link, with a copy fallback. If any sidecar or final region move fails, those snapshots are restored in reverse
-order. Regions without changed sidecars keep the direct atomic-replacement path.
+The 26.3 integration was consulted against
+[the ForceBlend Once source](https://github.com/valcheffnet/forceblend-once/tree/bc196dcf47ea0ae5283a04f2b65a8f52d4fdb13d).
+The event boundary is visible in
+[NeoForge's ServerAboutToStartEvent](https://github.com/neoforged/NeoForge/blob/26.3.x/src/main/java/net/neoforged/neoforge/event/server/ServerAboutToStartEvent.java).
 
-This remains a per-region transaction; it is not a single all-world transaction. Earlier successfully replaced regions
-are not rolled back if a later region encounters an I/O failure, which is one reason backups and stale-plan validation
-remain important.
+## Source and build layout
 
-## Complete world backups
+`common/src/main/` contains the loader-neutral core and shared resources. `common/src/client/` contains the screen
+bridge, workflow, and settings controller. Tests live in `common/src/test/` and run through the Fabric build.
+`fabric/src/` and `neoforge/src/` contain their respective loader adapters and metadata.
 
-`WorldBackupService` runs before application when requested. It writes a complete ZIP to a partial sibling under
-`<game>/backups/forceblend/<world>/`, reports file/byte progress, forces the archive, and publishes it with a timestamp.
-Name collisions receive numeric suffixes instead of overwriting an older backup.
-
-The service rejects source/destination overlap, symbolic links in the source or destination ancestry, and unsafe ZIP
-paths. It scans the world again before publication; if the source file set, sizes, or timestamps changed, the partial
-archive is discarded. Cancellation and ordinary failure also remove the partial file.
-
-## Dependency boundaries
-
-- Fabric Loader, Mixin, lifecycle adapters, dialogs, and Mod Menu reflection live in the client source set.
-- Minecraft classes are forbidden in the main processing, configuration, and backup source set.
-- NBT mutation is confined to `ChunkModifier`.
-- Chunk-generation eligibility is confined to `ChunkStatusPolicy`.
-- Dimension selection is confined to `WorldOpenHandler` and `WorldProcessor`.
-- Spatial eligibility and compact topology live in `ChunkPositionIndex` and `RegionScanner`.
-- Compression behavior is confined to `RegionCompression`.
-- Anvil layout, external streams, planning, stale validation, and region commit behavior live in the processing package.
-- Backup path and ZIP safety live in `WorldBackupService`.
-- Persistent user preferences live in the configuration package.
-
-Querz/NBT remains pinned to upstream release `6.1`. Fabric Loom reports that Maven version string as non-SemVer while
-nesting the JAR; this is an upstream metadata warning, not a runtime dependency or compatibility failure.
-
-## Adding a future version
-
-1. Verify the version is stable and determine its Java baseline.
-2. Audit the exact world-open method in official or Fabric intermediary mappings.
-3. Confirm the Overworld storage path and Anvil compression behavior.
-4. Audit the exact `blending_data` codec and chunk-status eligibility boundary.
-5. Verify that the shared desktop and optional Mod Menu boundaries still load.
-6. Extend the metadata range only after mapping evidence, automated coverage, and an in-game smoke test exist.
-
-Do not make universal metadata open-ended. A future Minecraft version should fail dependency resolution until its
-lifecycle and data format have been reviewed.
+The root Gradle composite build coordinates the independent loader builds. Both compile common sources directly
+and read root version/library settings. `paper/` is planning only and is excluded from the build.

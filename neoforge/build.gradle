@@ -1,0 +1,65 @@
+plugins {
+    id 'net.neoforged.moddev' version '2.0.148'
+}
+
+def sharedProperties = new Properties()
+file('../gradle.properties').withInputStream { sharedProperties.load(it) }
+version = sharedProperties.getProperty('mod_version')
+group = sharedProperties.getProperty('maven_group')
+base { archivesName = 'ForceBlend-neoforge' }
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(25)
+    withSourcesJar()
+}
+
+sourceSets.main.java {
+    srcDir '../common/src/main/java'
+    srcDir '../common/src/client/java'
+}
+sourceSets.main.resources {
+    srcDir '../common/src/main/resources'
+}
+
+neoForge {
+    version = project.neo_version
+    runs {
+        client { client() }
+        server { server() }
+    }
+    mods {
+        forceblend {
+            sourceSet sourceSets.main
+        }
+    }
+}
+
+repositories {
+    mavenCentral()
+    maven { url = 'https://jitpack.io' }
+}
+
+dependencies {
+    jarJar(implementation("com.github.Querz:NBT:${sharedProperties.getProperty('querz_nbt_version')}"))
+    jarJar(implementation("org.lz4:lz4-pure-java:${sharedProperties.getProperty('lz4_version')}"))
+}
+
+processResources {
+    def properties = [version: project.version, neo_version: project.neo_version]
+    inputs.properties(properties)
+    filesMatching('META-INF/neoforge.mods.toml') { expand properties }
+}
+
+jar {
+    from('../LICENSE.txt') { rename { 'LICENSE_ForceBlend' } }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.compilerArgs.addAll(['-Xlint:all', '-Xlint:-processing'])
+}
+
+tasks.withType(AbstractArchiveTask).configureEach {
+    preserveFileTimestamps = false
+    reproducibleFileOrder = true
+}
