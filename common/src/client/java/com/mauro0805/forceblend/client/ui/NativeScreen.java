@@ -47,8 +47,8 @@ public final class NativeScreen {
 
     public static Object current() {
         try {
-            RuntimeUi ui = runtime();
-            return field(ui.client.getClass(), "screen", "field_1755").get(ui.client);
+            Object owner = screenOwner(runtime().client);
+            return field(owner.getClass(), "screen", "field_1755").get(owner);
         } catch (ReflectiveOperationException exception) {
             throw failure(exception);
         }
@@ -56,10 +56,20 @@ public final class NativeScreen {
 
     public static void show(Object screen) {
         try {
-            RuntimeUi ui = runtime();
-            method(ui.client.getClass(), 1, "setScreen", "method_1507").invoke(ui.client, screen);
+            Object owner = screenOwner(runtime().client);
+            method(owner.getClass(), 1, "setScreen", "method_1507").invoke(owner, screen);
         } catch (ReflectiveOperationException exception) {
             throw failure(exception);
+        }
+    }
+
+    /** Minecraft 26.2 moved the current screen and {@code setScreen} from {@code Minecraft} to its {@code Gui}. */
+    private static Object screenOwner(Object client) throws ReflectiveOperationException {
+        try {
+            method(client.getClass(), 1, "setScreen", "method_1507");
+            return client;
+        } catch (NoSuchMethodException exception) {
+            return field(client.getClass(), "gui").get(client);
         }
     }
 
