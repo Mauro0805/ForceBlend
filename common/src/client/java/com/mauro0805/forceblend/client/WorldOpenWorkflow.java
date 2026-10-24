@@ -97,7 +97,7 @@ public final class WorldOpenWorkflow {
             screen.content(view -> {
                 view.line("ForceBlend: " + levelId);
                 view.button("Analyze terrain borders", this::analyze);
-                view.button("Enter unchanged", this::resume);
+                view.button("Open without changes", this::resume);
                 view.button("Cancel", this::cancel);
             }).onClose(this::cancel);
             NativeScreen.show(screen.handle());
@@ -118,7 +118,7 @@ public final class WorldOpenWorkflow {
                 screen.content(view -> {
                     view.line("ForceBlend: no changes needed");
                     view.line(summary.discoveredChunks() + " chunks scanned");
-                    view.button("Enter world", this::resume);
+                    view.button("Open world", this::resume);
                     view.button("Cancel", this::cancel);
                 }).onClose(this::cancel);
             } else {
@@ -129,10 +129,14 @@ public final class WorldOpenWorkflow {
                     view.line(summary.discoveredChunks() + " chunks scanned; " + summary.affectedChunks() + " affected");
                     view.line(summary.deferredChunks() + " chunks deferred by the configured limit");
                     view.line("Estimated processing: " + duration(estimate) + " (backup excluded)");
-                    view.button(config.automaticBackupEnabled() ? "Apply and enter (automatic backup on)"
-                        : "Apply and enter without backup", () -> apply(plan, false));
-                    view.button("Back up, apply and enter", () -> apply(plan, true));
-                    view.button("Enter unchanged", this::resume);
+                    // Players tend to take the first button without reading, so that one always backs up.
+                    if (config.automaticBackupEnabled()) {
+                        view.button("Prepare world (backup is on)", () -> apply(plan, true));
+                    } else {
+                        view.button("Back up and prepare world", () -> apply(plan, true));
+                        view.button("Prepare without backup (risky)", () -> apply(plan, false));
+                    }
+                    view.button("Open without changes", this::resume);
                     view.button("Cancel", this::cancel);
                 }).onClose(this::cancel);
             }

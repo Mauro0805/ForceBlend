@@ -37,10 +37,13 @@ ForceBlend Once 26.3 Fabric and NeoForge builds. Those results do not verify the
 The default is **once per world**. Until preparation completes, selecting a world starts a read-only analysis that
 shows the selected chunks, regions, deferred work, and estimated processing time. You can choose:
 
-- **Apply and enter**: prepare the selected chunks and enter.
-- **Back up, apply and enter**: finish a world backup before preparing the chunks.
-- **Enter unchanged**: enter without applying the plan.
+- **Back up and prepare world**: finish a world backup, prepare the selected chunks, then open the world.
+- **Prepare without backup (risky)**: prepare the selected chunks without a backup. Only shown when
+  `automatic-backup=false`.
+- **Open without changes**: open the world without applying the plan.
 - **Cancel**: return without opening the world.
+
+With `automatic-backup=true` (the default) the first two are one button, **Prepare world (backup is on)**.
 
 Analysis and processing use Minecraft screens, with progress, ETA, active regions, and speed. Preparation runs off the
 render thread, and a completion message appears before entering the world. No Swing dialogs or desktop notifications
@@ -64,7 +67,7 @@ Settings are read again at the next opening or server start.
 |---|---|---|
 | `run-mode` | `once` | Use `every-open` to scan at every opening. |
 | `automatic-processing` | `true` | Clients ask before scanning when false; dedicated servers skip processing. |
-| `automatic-backup` | `false` | Clients always back up before applying when true. |
+| `automatic-backup` | `true` | Clients always back up before applying when true. |
 | `detailed-logging` | `false` | Enable region and chunk diagnostics. |
 | `maximum-chunks-per-run` | `unlimited` | A positive limit defers remaining work to later openings. |
 | `processing-threads` | `all` | Use all processors reported by the JVM, or a smaller positive count. |

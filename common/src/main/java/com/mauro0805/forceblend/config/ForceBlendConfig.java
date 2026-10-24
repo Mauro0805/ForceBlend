@@ -30,7 +30,7 @@ public record ForceBlendConfig(
 
     public static final ForceBlendConfig DEFAULTS = new ForceBlendConfig(
         true,
-        false,
+        true,
         false,
         UNLIMITED_CHUNKS,
         ALL_AVAILABLE_THREADS,
