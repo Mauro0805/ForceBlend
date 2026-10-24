@@ -9,14 +9,15 @@ Development branch: `1.2.0`, starting from the `1.1.0` beta.
 
 Original mod by Mauro0805. Maintained by Mauro0805 and SasnycoN.
 
-- Document manual client acceptance, migration, development pushes, and release gates in a maintainer checklist.
-- Correct the team CurseForge drafts to describe 1.2.0 completion markers, full-world backups, and configuration.
-- Verify dedicated-server blending and execution modes on 1.18.2/26.1.2 is working.
-- Migration from a world processed by the actual ForceBlend Once 1.1.0 release. Client acceptance remains pending.
-- Separate shared sources into `common/` and loader adapters into `fabric/` and `neoforge/`.
-- Coordinate both loader builds from the root; move Fabric output to `fabric/build/libs/`.
-- Reserve `paper/` for a future-plugin checklist only; no Paper support is added in 1.2.0.
-- Update ignore rules for generated output, private tooling, and local world backups.
+- Documents manual client acceptance, migration, development pushes, and release gates in a maintainer checklist.
+- Updates the team CurseForge drafts for 1.2.0 completion markers, full-world backups, and configuration.
+- Verifies dedicated-server blending and execution modes on Fabric 1.18.2 and 26.1.2.
+- Verifies migration from a world processed by the released ForceBlend Once 1.1.0 build on a Fabric 26.3 server.
+- Client acceptance remains pending. See [the additional runtime results](docs/RUNTIME_VERIFICATION_1.2.0.md).
+- Separates shared sources into `common/` and loader adapters into `fabric/` and `neoforge/`.
+- Coordinates both loader builds from the root; moves Fabric output to `fabric/build/libs/`.
+- Reserves `paper/` for a future-plugin checklist only; no Paper support is added in 1.2.0.
+- Updates ignore rules for generated output, private tooling, and local world backups.
 - Integrates the 1.1.0 workflow with the 26.3 and dedicated-server ports from ForceBlend Once.
 - Keeps the ForceBlend name, `forceblend` mod ID, and `backups/forceblend/` backup location.
 - Defaults to once per world, with `run-mode=every-open` and a matching settings choice.
@@ -30,7 +31,8 @@ Original mod by Mauro0805. Maintained by Mauro0805 and SasnycoN.
 - Requires a full-world backup for every headless application; omits the root runtime `session.lock` from ZIPs.
 - Adds tests for legacy markers, execution modes, deferred completion, mandatory backups, and server paths.
 - Uses CurseForge for new releases and credits both maintainers in loader metadata.
-- Verifies 1.2.0 dedicated-server blending on Fabric 26.2/26.3 and NeoForge 26.3 with a seed-swap control comparison, exact frontier selection, restored-backup region bytes, and once-mode restart checks.
+- Verifies 1.2.0 dedicated-server blending on Fabric 26.2/26.3 and NeoForge 26.3 with a seed-swap control comparison,
+  exact frontier selection, restored-backup region bytes, and once-mode restart checks.
 - Singleplayer and other runtime checks remain pending. See [the measured results](docs/BLEND_TEST_RESULTS.md).
 
 ## 1.1.0-beta.1 - 2026-07-29
@@ -128,6 +130,5 @@ builds whose version numbers did not carry a pre-release suffix.
 - **Beta 2:** added the correct Minecraft 1.18 `old_noise` format.
 - **Beta 1:** introduced the universal JAR, lifecycle adapter selection, and loader-neutral processing core.
 - **Alpha prototypes:** established the Fabric hook, Overworld-only boundary, native blending trigger, tests, and
-  project
-  structure. Some local alpha builds used `1.0.0`, `1.1.0`, or `1.2.0` as temporary identifiers; they were not stable
+  project structure. Some local alpha builds used `1.0.0`, `1.1.0`, or `1.2.0` as temporary identifiers; they were not stable
   public releases.
