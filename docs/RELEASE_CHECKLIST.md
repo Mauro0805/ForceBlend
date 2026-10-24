@@ -22,10 +22,10 @@ Run on Fabric 1.18.2, 26.1.2, 26.2, and 26.3, and NeoForge 26.3 where applicable
 
 - [ ] Select an unprepared existing world: analysis reports chunks, regions, deferred work, and an ETA.
 - [ ] Cancel and Escape return safely without opening or changing world data.
-- [ ] Enter unchanged opens the world without preparation, a new backup, or a completion marker.
-- [ ] Apply without backup prepares terrain and enters; test with automatic backup disabled.
-- [ ] Back up and apply creates a restorable ZIP outside the world before terrain writes.
-- [ ] Automatic backup overrides the no-backup choice when enabled.
+- [ ] Open without changes opens the world without preparation, a new backup, or a completion marker.
+- [ ] Back up and prepare world is the first button and creates a restorable ZIP outside the world before terrain writes.
+- [ ] Prepare without backup (risky) prepares terrain and opens the world; test with automatic backup disabled.
+- [ ] With automatic backup on (the default), only Prepare world (backup is on) is offered and it backs up.
 - [ ] Progress remains responsive and shows work counts, active regions, ETA, and completion.
 - [ ] Generate new terrain beside the prepared border, inspect blending, play, save, quit, and reopen.
 - [ ] Once mode skips the completed world; deferred runs do not prematurely mark completion.

@@ -41,8 +41,8 @@ before that, mark its platform release type as Beta and make the pending runtime
 > ForceBlend prepares existing Overworld chunks so Minecraft can blend new terrain beside them after seed or generator
 > changes, chunk imports, or deletions.
 >
-> On clients, a read-only analysis reports affected chunks, regions, and an approximate duration. Apply and enter,
-> back up and apply, enter unchanged, or cancel. Large jobs show progress, ETA, regions, and speed. Fabric Mod Menu
+> On clients, a read-only analysis reports affected chunks, regions, and an approximate duration. Back up and prepare,
+> prepare without a backup, open without changes, or cancel. Large jobs show progress, ETA, regions, and speed. Fabric Mod Menu
 > provides optional settings; both loaders can use the properties file.
 >
 > Dedicated servers prepare worlds before loading them and always make a complete world backup before applying.

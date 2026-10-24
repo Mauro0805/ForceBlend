@@ -24,7 +24,7 @@ final class ForceBlendConfigStoreTest {
         assertTrue(Files.isRegularFile(configFile));
         String persisted = Files.readString(configFile, StandardCharsets.UTF_8);
         assertTrue(persisted.contains("automatic-processing=true"));
-        assertTrue(persisted.contains("automatic-backup=false"));
+        assertTrue(persisted.contains("automatic-backup=true"));
         assertTrue(persisted.contains("detailed-logging=false"));
         assertTrue(persisted.contains("maximum-chunks-per-run=unlimited"));
         assertTrue(persisted.contains("processing-threads=all"));

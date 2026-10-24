@@ -40,7 +40,7 @@ The Fabric dedicated-server entrypoint reads `server.properties`, honors `--worl
 headless coordinator before level loading. It contains no Minecraft method signatures.
 
 NeoForge uses `ServerAboutToStartEvent` for dedicated servers. The event is not cancellable, so integrated worlds use
-a client mixin before `WorldOpenFlows.openWorld`. This preserves Enter unchanged and Cancel without turning a user's
+a client mixin before `WorldOpenFlows.openWorld`. This preserves Open without changes and Cancel without turning a user's
 choice into a server startup exception. The server event skips integrated servers to avoid processing twice.
 
 The shared screens, workflow, and configuration controller have no Fabric class references. The Fabric initializer,

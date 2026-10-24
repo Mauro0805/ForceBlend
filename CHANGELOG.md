@@ -28,6 +28,11 @@ Original mod by Mauro0805. Maintained by Mauro0805 and SasnycoN.
 - Runs client analysis and application off the render thread, then resumes the intercepted world-open call.
 - Extends the Fabric target range through Minecraft 26.3 and adds headless dedicated-server preparation.
 - Adds a separate NeoForge 26.3 build that shares the core, backup, configuration, and client workflow.
+- Fixes the client screens on Minecraft 26.2 and 26.3, where `setScreen` and the current screen moved from
+  `Minecraft` to `Gui`. Before the fix, an unprepared world could not be opened on those versions.
+- Turns `automatic-backup` on by default and puts the backup choice first, since players tend to take the first button.
+  Without automatic backup the menu offers Back up and prepare world, Prepare without backup (risky), Open without
+  changes, and Cancel.
 - Requires a full-world backup for every headless application; omits the root runtime `session.lock` from ZIPs.
 - Adds tests for legacy markers, execution modes, deferred completion, mandatory backups, and server paths.
 - Uses CurseForge for new releases and credits both maintainers in loader metadata.
