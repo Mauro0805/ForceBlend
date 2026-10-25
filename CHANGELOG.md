@@ -2,6 +2,11 @@
 
 Original mod by Mauro0805. Maintained by Mauro0805 and SasnycoN (valcheffnet).
 
+## Unreleased
+
+- Fixes leftover `.forceblend-rollback-*.tmp` files in the region folder on Linux and macOS after a failed write.
+  The world itself was already restored correctly.
+
 ## 1.2.0 - 2026-10-25
 
 Combines the ForceBlend 1.1.0 beta workflow with the ForceBlend Once ports.

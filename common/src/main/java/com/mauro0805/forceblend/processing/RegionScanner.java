@@ -1022,7 +1022,13 @@ public final class RegionScanner {
     private record RollbackSnapshot(Path target, Path rollbackFile, boolean existed) {
         void restore() throws IOException {
             if (existed) {
-                moveReplacing(rollbackFile, target);
+                // An untouched target is still the same file as its hard-link snapshot, and on POSIX
+                // rename() between two links to one file does nothing, leaving the snapshot behind.
+                if (Files.exists(target, LinkOption.NOFOLLOW_LINKS) && Files.isSameFile(rollbackFile, target)) {
+                    Files.delete(rollbackFile);
+                } else {
+                    moveReplacing(rollbackFile, target);
+                }
                 return;
             }
             if (!Files.exists(target, LinkOption.NOFOLLOW_LINKS)) {
