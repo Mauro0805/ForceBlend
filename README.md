@@ -6,7 +6,7 @@ ForceBlend prepares existing Overworld chunks so Minecraft can blend new terrain
 generator change, chunk import, or deletion. Minecraft generates and blends the terrain; ForceBlend prepares
 the existing side of the border. It does not retroactively smooth a border whose two sides already exist.
 
-## Version 1.2.0
+## Version 1.2.1
 
 See the [changelog](CHANGELOG.md) for release changes and earlier version history.
 
@@ -16,16 +16,17 @@ Source availability is not a stable-release announcement. Releases use the exist
 
 | Artifact | Declared target |
 |---|---|
-| `ForceBlend-1.2.0.jar` | Fabric, stable Minecraft 1.18-1.21.11 and 26.1-26.3 |
-| `ForceBlend-neoforge-1.2.0.jar` | Minecraft 26.3, NeoForge 26.3.0.90 or newer within that family |
+| `ForceBlend-1.2.1.jar` | Fabric, stable Minecraft 1.18-1.21.11 and 26.1-26.3 |
+| `ForceBlend-neoforge-1.2.1.jar` | NeoForge, Minecraft 1.20.6-26.3 |
 
 Install only the file for your loader, replacing any old ForceBlend Once JAR. Fabric API is not required;
 Mod Menu is optional on Fabric. Use the Java runtime required by the game. Fabric retains Java 17 bytecode;
-the NeoForge build uses Java 25.
+the NeoForge build uses Java 21 bytecode.
 
 The 1.2.0 manual singleplayer test on Fabric 1.18.2 verified native screens, preparation, the `old_noise` marker,
 adjacent terrain, saving and reopening. Dedicated-server comparisons are recorded for Fabric 1.18.2, 1.19.4,
-1.20.4, 1.21.11, 26.1.2, 26.2 and 26.3, plus NeoForge 26.3. Separate Fabric 26.x client-menu results are also recorded.
+1.20.4, 1.21.11, 26.1.2, 26.2 and 26.3, plus NeoForge 1.20.6, 1.21.1, 1.21.11, 26.1.2 and 26.3. Client-menu
+results are recorded for Fabric 26.x and the same five NeoForge versions.
 These are environment-specific results, not a guarantee for every modpack or every version in the declared ranges.
 Final release acceptance remains separate. Detailed evidence and maintainer checklists live in
 [forceblend-team](https://github.com/valcheffnet/forceblend-team), subject to repository access.

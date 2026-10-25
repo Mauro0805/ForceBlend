@@ -2,8 +2,10 @@
 
 Original mod by Mauro0805. Maintained by Mauro0805 and SasnycoN (valcheffnet).
 
-## Unreleased
+## 1.2.1 - 2026-10-25
 
+- The NeoForge file now runs on Minecraft 1.20.6 to 26.3 instead of 26.3 only. It is built for Java 21 and uses
+  the lz4 library that Minecraft ships, since a second copy stops NeoForge 1.20.6 and 1.21.1 at startup.
 - Fixes leftover `.forceblend-rollback-*.tmp` files in the region folder on Linux and macOS after a failed write.
   The world itself was already restored correctly.
 
