@@ -10,6 +10,8 @@ base { archivesName = 'ForceBlend-neoforge' }
 
 java {
     toolchain.languageVersion = JavaLanguageVersion.of(25)
+    // NeoForge 26.3 is published for Java 25; the release flag below still keeps our classes at Java 21.
+    disableAutoTargetJvm()
     withSourcesJar()
 }
 
@@ -41,7 +43,9 @@ repositories {
 
 dependencies {
     jarJar(implementation("com.github.Querz:NBT:${sharedProperties.getProperty('querz_nbt_version')}"))
-    jarJar(implementation("org.lz4:lz4-pure-java:${sharedProperties.getProperty('lz4_version')}"))
+    // Minecraft ships lz4-java from 1.20.5 on. A second copy in the JAR exports the same packages and stops
+    // 1.20.6 to 1.21.1 at startup, so NeoForge uses the game's copy.
+    compileOnly("org.lz4:lz4-pure-java:${sharedProperties.getProperty('lz4_version')}")
 }
 
 processResources {
@@ -55,6 +59,8 @@ jar {
 }
 
 tasks.withType(JavaCompile).configureEach {
+    // Compiled against 26.3 but for Java 21, so the same JAR also loads on 1.20.6 to 1.21.x.
+    options.release = 21
     options.encoding = 'UTF-8'
     options.compilerArgs.addAll(['-Xlint:all', '-Xlint:-processing'])
 }
