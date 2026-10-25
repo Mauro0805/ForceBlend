@@ -2,10 +2,9 @@
 
 Original mod by Mauro0805. Maintained by Mauro0805 and SasnycoN (valcheffnet).
 
-## 1.2.0 - Release candidate
+## 1.2.0 - 2026-10-25
 
-Combines the ForceBlend 1.1.0 beta workflow with the ForceBlend Once ports. Final release approval and publication
-remain maintainer steps; the presence of this changelog does not announce a published release.
+Combines the ForceBlend 1.1.0 beta workflow with the ForceBlend Once ports.
 
 ### World opening and configuration
 
