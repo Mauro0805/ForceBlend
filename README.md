@@ -78,7 +78,88 @@ can be repaired.
 Nether, End, custom dimensions, entity/POI files and structure data are not processed. ForceBlend does not edit
 seeds, import/delete chunks, generate terrain or reposition structures. CubicChunks, Forge and snapshots are
 unsupported. Terrain generators must retain compatible Anvil storage and Minecraft's native blending path.
-Paper remains future work, with no plugin artifact in 1.2.0.
+The mod artifacts contain no Bukkit plugin; use the separate Bukkit JAR below.
+
+## Bukkit plugin 1.2.1
+
+A separate `bukkit-plugin/` build uses the same shared preparation core. The same JAR is a conventional
+Bukkit plugin and a standalone pre-start tool. The pre-start route handles the server's main world while the
+server is stopped; it does not need to load Bukkit or disable the server's other plugins. No NMS is used.
+This is a separate server artifact, not a replacement for the Fabric or NeoForge files.
+
+Build with `./gradlew -p bukkit-plugin build`. Install only
+`bukkit-plugin/build/libs/ForceBlend-bukkit-1.2.1.jar`, not the `-unbundled.jar` intermediate.
+For main worlds, copy the fully commented
+[forceblend-settings-and-acceptance.properties](bukkit-plugin/src/main/resources/forceblend-settings-and-acceptance.properties)
+template beside the server JAR. It contains every setting, acceptance, examples and startup/removal instructions:
+
+Keep the server and editors stopped, keep a separate recoverable world copy, then set
+`accept-world-preparation=true`. There is no dialog. Run this before your existing server start command:
+
+```bash
+java -Xmx128m -jar ForceBlend-bukkit-1.2.1.jar --settings forceblend-settings-and-acceptance.properties
+```
+
+Set `worlds=world` and the exact saved `minecraft-version` first. Relative `world-container` paths resolve from
+the settings file. `worlds` accepts comma-separated names; use `worlds.0`, `worlds.1`, etc. instead for names containing
+commas. Existing `--world-container`, repeatable `--world` and `--minecraft-version` overrides remain available.
+Only start the server if this command exits successfully (exit code 0). On PowerShell, check `$LASTEXITCODE`;
+on Bash, chain the server command with `&&`. A hosting panel must allow a custom pre-start command; installing
+the plugin alone cannot prepare its already-locked main world.
+
+Existing `forceblend-prestart.properties` files remain recognized; rename yours without resetting its values if
+you want the clearer name. With default discovery, keeping both files is an error: keep one, or select one explicitly
+with `--settings`. An explicitly named missing settings file is an error, not a fallback to defaults.
+
+Once mode skips completed worlds. `every-open` rechecks each invocation; a chunk limit defers work until the next
+invocation. All six settings and their defaults match the 1.2.1 dedicated-server mod. `unlimited`/`0` mean no chunk
+limit; `all`/`auto`/`0` use all available processors. Explicit thread counts range from 1 to 256 and are capped at
+available processors. Invalid settings fail closed rather than silently changing the workload.
+Read-only analysis is available with `--action analyze` and does not require acceptance or create backups.
+`--action unchanged` explicitly skips preparation. Processing logs counts, active regions, ETA, backup progress
+and completion. Settings may be selected with `--settings`; command-line tuning overrides the properties values.
+Full backups are mandatory, outside the world under `backups/forceblend/<world>/`, even with `automatic-backup=false`,
+matching the mod's dedicated-server policy. `preparation-enabled=false` and `analysis-enabled=true` select analysis
+from the file alone; when both are false it skips. Preparation takes precedence when both are true.
+`automatic-processing=false` skips automatic work. Pre-start preparation defaults on behind acceptance; the
+in-server adapter defaults it off because it must not rewrite an already-locked main world.
+
+The in-server adapter remains optional: explicit offline targets in `plugins/ForceBlend/config.yml`, with
+`preparation-enabled: true`, still require ForceBlend as the only plugin. `analysis-enabled` is read-only.
+When using pre-start for the main world, leave in-server `preparation-enabled` false; preparation has already run.
+Both paths require existing session locks, an exact Minecraft metadata-version match and local storage supporting
+hard links and exclusive locks. Running worlds are refused, never unlocked or edited behind Minecraft's back.
+A bounded helper JVM owns both the locks and all preparation writes.
+
+The verified support matrix is deliberately narrow: Windows with local Anvil storage, Spigot build
+3498-Spigot-b081915-10ba1be on 1.18.2, Paper 388/Purpur 1632 on 1.18.2, and Paper 132/Purpur 2568 on 1.21.11.
+Use Java 17 for these 1.18.2 servers and Java 21 for these 1.21.11 servers. Other builds and forks are not verified.
+This matrix is independent of Fabric/NeoForge compatibility. Java 17 bytecode and a Bukkit 1.18 API baseline do
+not establish a universal game range.
+
+Acceptance covers settings/removal, primary-world pre-start, backup restoration, and numerical seed-swap blending
+on those five combinations. Native storage checks cover external `.mcc` streams on both version families and
+LZ4 on 1.21.11; 1.18.2 does not support LZ4. Minecraft may normalize compression/storage on its next save.
+Interruption and simulated write failures are tested on disposable worlds, including restoration and reopening.
+An interrupted application may have committed some regions: do not bypass a failed startup guard. Stop all
+writers, retain the failed copy, and restore a complete backup to a separate folder before retrying.
+Linux, arbitrary forks/custom generators, distributed storage, Folia and broad in-server plugin combinations
+remain unverified or unsupported. Installing only the plugin cannot safely prepare an already-locked main world.
+See the team repository for exact evidence and limitations; publication remains a maintainer action.
+
+### Removing the plugin
+
+Stop the server, remove the ForceBlend JAR from `plugins/`, and remove its pre-start command from your startup script
+or panel. Restore the normal server command directly, including removing any `&&` or exit-code guard that depended
+on the deleted command. No uninstall command or world conversion is needed. Configuration files may be removed too.
+Keep backups until you are satisfied with the world. Existing preparation uses Minecraft's own blending tags;
+removal does not undo terrain changes or require deleting those tags. The world completion/legacy marker files
+are optional after removal, not required by Minecraft.
+
+The world can still load/save after removal, including after a chunk-limited run. Deferred chunks will not be
+prepared automatically, and every-open mode stops running: keep ForceBlend until pending work is done if you need
+that preparation. Future seed/generator changes or imports may require running it again. Removal tests do not
+guarantee compatibility with every generator or certify visual terrain quality.
 
 ## Building and contributing
 

@@ -1,5 +1,7 @@
 # Directory rules apply at every depth, including fabric/ and neoforge/.
 .gradle/
+.gradle-user-home/
+.offline-libs/
 .idea/
 .fleet/
 .vscode/
@@ -17,6 +19,7 @@ logs/
 *.log
 hs_err_pid*
 replay_pid*
+.forceblend-lease-*/
 .team/
 
 # Local compiler output and development tooling
@@ -25,6 +28,11 @@ bin/
 *.hprof
 .DS_Store
 Thumbs.db
+
+# Local environment configuration; keep shareable examples available.
+.env
+.env.*
+!.env.example
 
 # Private maintainer and agent files
 AGENTS.md
@@ -41,6 +49,13 @@ CLAUDE.md
 /fabric/backups/
 /neoforge/backups/
 /paper/backups/
+/bukkit-plugin/backups/
+
+# Operator acceptance/settings are local; the packaged safe-default template remains tracked.
+/forceblend-prestart.properties
+/bukkit-plugin/forceblend-prestart.properties
+/forceblend-settings-and-acceptance.properties
+/bukkit-plugin/forceblend-settings-and-acceptance.properties
 
 # Detailed internal documentation belongs in forceblend-team; public README and changelog stay here.
 /docs/

@@ -1,0 +1,15 @@
+# Existing Overworld directories relative to the server world container.
+# The active primary world needs the standalone pre-start route because Minecraft already owns its lock.
+worlds: []
+# Optional shared-core analysis without application.
+analysis-enabled: false
+# Opt-in preparation of offline worlds only. Requires ForceBlend as the only plugin.
+# Existing session.lock must be exclusively acquired; it is never created, removed or bypassed.
+preparation-enabled: false
+automatic-processing: true
+# Full backups are mandatory and cannot be disabled.
+automatic-backup: true
+maximum-chunks-per-run: unlimited
+processing-threads: all
+run-mode: once
+detailed-logging: false

@@ -7,6 +7,23 @@ Original mod by Mauro0805. Maintained by Mauro0805 and SasnycoN (valcheffnet).
 - Fixes leftover `.forceblend-rollback-*.tmp` files in the region folder on Linux and macOS after a failed write.
   The world itself was already restored correctly.
 
+## Bukkit plugin 1.2.1 - 2026-10-31
+
+- Adds `ForceBlend-bukkit-1.2.1.jar`, using public Bukkit API without NMS. The same JAR provides stopped-world
+  pre-start preparation and an optional in-server adapter for exclusively owned offline targets.
+- Keeps the 1.2.1 server settings: once/every-open, chunk-limited continuation, processing threads, automatic
+  processing and detailed logs. Full backups are mandatory before server writes.
+- Explains all settings and acceptance in `forceblend-settings-and-acceptance.properties`; the earlier
+  `forceblend-prestart.properties` filename remains recognized. No pre-start dialog or GUI is required.
+- Uses a supervised worker owning both session leases and all writes. Running worlds, redirected paths,
+  metadata-version mismatches and unsupported releases are refused; failures never record completion.
+- Verifies Windows/local-Anvil operation and numerical blending on Spigot 1.18.2, Paper/Purpur 1.18.2 and
+  Paper/Purpur 1.21.11 with the exact server builds listed in the README. This is not universal fork/version support.
+- Tests backup/application interruption, simulated disk-full/mid-write errors and full restoration/load/save/reopen.
+  Also verifies native external `.mcc` handling on both families and LZ4 on 1.21.11.
+- Allows removal after preparation: remove both the plugin and its pre-start command/guard. Native blending tags
+  remain valid; pending work and every-open automation stop. Per-region recovery is not a world-wide atomic commit.
+
 ## 1.2.0 - 2026-10-25
 
 Combines the ForceBlend 1.1.0 beta workflow with the ForceBlend Once ports.
