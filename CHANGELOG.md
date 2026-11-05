@@ -2,36 +2,22 @@
 
 Original mod by Mauro0805. Maintained by Mauro0805 and SasnycoN (valcheffnet).
 
-## Unreleased
+## 1.3.0 - Unreleased
 
-- Fixes Bukkit analysis/offline preparation version detection for numeric `26.x.build.N` API qualifiers,
-  while retaining legacy version strings and strict rejection of unsupported Minecraft versions.
-- Adds API-string boundary regressions and runs the separate Bukkit build/API/package checks in CI.
-- Records expanded Paper runtime evidence separately from release approval; the current adapter fix remains
-  an unfrozen plugin candidate, not a newly published mod or a universal server support claim.
+- Integrates the 1.2.1 mod changes with the separate Bukkit plugin, aligning all artifact versions to 1.3.0.
+- Adds a Bukkit-API-only plugin and same-JAR pre-start tool for stopped Overworlds; no NMS or live-world writes.
+- Provides once/every-open modes, chunk limits, processing threads, progress logs and mandatory server backups.
+- Explains settings and explicit acceptance in forceblend-settings-and-acceptance.properties; the legacy filename remains supported.
+- Uses supervised workers with exclusive session leases, strict version/path checks and no premature completion.
+- Fixes numeric Paper API build qualifiers while retaining unsupported-version rejection.
+- Caps worker concurrency by available processors and heap budget; operators can explicitly configure a 256-4096 MiB worker heap.
+- Keeps lifecycle tracing behind detailed logging and reports ownership/configuration failures separately.
+- Allows plugin removal after preparation; deferred work and every-open automation stop when removed.
 
-- Fixes leftover `.forceblend-rollback-*.tmp` files in the region folder on Linux and macOS after a failed write.
-  The world itself was already restored correctly.
+## 1.2.1 - 2026-10-25
 
-## Bukkit plugin 1.2.1 candidate - 2026-10-31
-
-This is the plugin development milestone, not a publication date. The separately published 1.2.1 mods live on
-`main`; their broader NeoForge port is not included in this branch. The mod build here remains 1.2.0.
-
-- Adds `ForceBlend-bukkit-1.2.1.jar`, using public Bukkit API without NMS. The same JAR provides stopped-world
-  pre-start preparation and an optional in-server adapter for exclusively owned offline targets.
-- Keeps the 1.2.1 server settings: once/every-open, chunk-limited continuation, processing threads, automatic
-  processing and detailed logs. Full backups are mandatory before server writes.
-- Explains all settings and acceptance in `forceblend-settings-and-acceptance.properties`; the earlier
-  `forceblend-prestart.properties` filename remains recognized. No pre-start dialog or GUI is required.
-- Uses a supervised worker owning both session leases and all writes. Running worlds, redirected paths,
-  metadata-version mismatches and unsupported releases are refused; failures never record completion.
-- Verifies Windows/local-Anvil operation and numerical blending on Spigot 1.18.2, Paper/Purpur 1.18.2 and
-  Paper/Purpur 1.21.11 with the exact server builds listed in the README. This is not universal fork/version support.
-- Tests backup/application interruption, simulated disk-full/mid-write errors and full restoration/load/save/reopen.
-  Also verifies native external `.mcc` handling on both families and LZ4 on 1.21.11.
-- Allows removal after preparation: remove both the plugin and its pre-start command/guard. Native blending tags
-  remain valid; pending work and every-open automation stop. Per-region recovery is not a world-wide atomic commit.
+- Extends the NeoForge file to Minecraft 1.20.6-26.3, retaining Java 21 bytecode and the game's LZ4 library.
+- Fixes leftover rollback temporary files on Linux and macOS after a failed write; restored world data was already correct.
 
 ## 1.2.0 - 2026-10-25
 

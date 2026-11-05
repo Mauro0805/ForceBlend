@@ -45,9 +45,11 @@ final class OfflinePreparation {
             return;
         }
         List<String> command = new ArrayList<>();
+        WorkerBudget budget = WorkerBudget.configured(config.processingThreads(), Runtime.getRuntime().availableProcessors());
+        logger.info("Worker resources: heap=" + budget.heapMiB() + " MiB; processing threads=" + budget.threads());
         String executable = System.getProperty("os.name").startsWith("Windows") ? "java.exe" : "java";
         command.add(Path.of(System.getProperty("java.home"), "bin", executable).toString());
-        command.addAll(List.of("-Xms32m", "-Xmx512m", "-Dfile.encoding=UTF-8", "-cp"));
+        command.addAll(List.of("-Xms32m", "-Xmx" + budget.heapMiB() + "m", "-Dfile.encoding=UTF-8", "-cp"));
         List<String> roots = new ArrayList<>();
         try {
             for (Class<?> type : List.of(OfflinePreparationWorker.class, NBTDeserializer.class, LZ4Factory.class)) {
@@ -59,7 +61,7 @@ final class OfflinePreparation {
         }
         command.add(String.join(File.pathSeparator, roots));
         command.addAll(List.of(OfflinePreparationWorker.class.getName(), backupBase.toAbsolutePath().toString(), version,
-                Long.toString(config.maximumChunksPerRun()), Integer.toString(config.processingThreads()),
+                Long.toString(config.maximumChunksPerRun()), Integer.toString(budget.threads()),
                 config.runMode().name(), Boolean.toString(config.detailedLoggingEnabled()), Boolean.toString(analysisOnly)));
         targets.forEach(target -> command.add(target.toString()));
         ProcessBuilder builder = new ProcessBuilder(command).redirectErrorStream(true);
@@ -163,7 +165,9 @@ final class OfflinePreparation {
                     : ProcessingOptions.UNLIMITED_CHUNKS;
             var plan = WorldProcessor.analyze(target.getFileName().toString(), terrain,
                     profile,
-                    new ProcessingOptions(config.resolvedProcessingThreads(Runtime.getRuntime().availableProcessors()), maximum), progress);
+                    new ProcessingOptions(WorkerBudget.forHeap(config.processingThreads(),
+                            Runtime.getRuntime().availableProcessors(),
+                            (int) (Runtime.getRuntime().maxMemory() / (1024L * 1024L))).threads(), maximum), progress);
             if (plan.summary().discoveredChunks() == 0) {
                 log.accept("No terrain found; completion was not recorded: " + target.getFileName());
                 continue;

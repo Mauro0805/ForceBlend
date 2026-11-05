@@ -2,8 +2,10 @@ plugins {
     id 'java'
     id 'com.gradleup.shadow' version '9.6.1'
 }
-group = 'com.mauro0805'
-version = '1.2.1'
+def sharedProperties = new Properties()
+file('../gradle.properties').withInputStream { sharedProperties.load(it) }
+group = sharedProperties.getProperty('maven_group')
+version = sharedProperties.getProperty('mod_version')
 repositories {
     mavenCentral()
     maven { url = 'https://jitpack.io' }
@@ -20,13 +22,13 @@ sourceSets {
     }
 }
 dependencies {
-    implementation 'com.github.Querz:NBT:6.1'
-    implementation 'org.lz4:lz4-pure-java:1.8.0'
+    implementation "com.github.Querz:NBT:${sharedProperties.getProperty('querz_nbt_version')}"
+    implementation "org.lz4:lz4-pure-java:${sharedProperties.getProperty('lz4_version')}"
     compileOnly 'org.slf4j:slf4j-api:2.0.17'
     testImplementation 'org.slf4j:slf4j-api:2.0.17'
     testRuntimeOnly 'org.slf4j:slf4j-simple:2.0.17'
     compileOnly 'org.spigotmc:spigot-api:1.18.2-R0.1-SNAPSHOT'
-    testImplementation platform('org.junit:junit-bom:5.14.4')
+    testImplementation platform("org.junit:junit-bom:${sharedProperties.getProperty('junit_version')}")
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
@@ -34,8 +36,15 @@ tasks.withType(JavaCompile).configureEach {
     options.release = 17
     options.encoding = 'UTF-8'
 }
+
+processResources {
+    def properties = [version: project.version.toString()]
+    inputs.properties(properties)
+    filesMatching(['plugin.yml', 'forceblend-settings-and-acceptance.properties']) { expand properties }
+}
 tasks.named('test') {
     useJUnitPlatform()
+    systemProperty 'forceblend.expected.version', project.version.toString()
     maxHeapSize = '512m'
     maxParallelForks = 1
     def temporaryDirectory = layout.buildDirectory.dir('test-tmp')
@@ -63,6 +72,11 @@ tasks.named('shadowJar') {
     exclude 'META-INF/versions/**', 'module-info.class', 'META-INF/*.SF', 'META-INF/*.RSA', 'META-INF/*.DSA'
 }
 tasks.named('assemble') { dependsOn tasks.named('shadowJar') }
+
+tasks.withType(AbstractArchiveTask).configureEach {
+    preserveFileTimestamps = false
+    reproducibleFileOrder = true
+}
 tasks.register('verifyBukkitBoundary') {
     dependsOn tasks.named('classes')
     doLast {
@@ -88,10 +102,15 @@ tasks.register('verifyDiagnosticJar') {
             ['plugin.yml', 'config.yml', 'LICENSE.txt'].each { required ->
                 if (zip.getEntry(required) == null) throw new GradleException("Missing ${required}")
             }
+            ['WorldLeaseWorker', 'WorldLeaseProcess'].each { probe ->
+                if (zip.getEntry("com/mauro0805/forceblend/bukkit/${probe}.class") != null) {
+                    throw new GradleException("Test helper leaked into plugin: ${probe}")
+                }
+            }
             zip.entries().each { entry ->
                 if (entry.name.endsWith('.class')) {
                     if (!entry.name.startsWith('com/mauro0805/forceblend/')) {
-                        throw new GradleException("Unexpected diagnostic JAR class: ${entry.name}")
+                    throw new GradleException("Unexpected plugin JAR class: ${entry.name}")
                     }
                     zip.getInputStream(entry).withCloseable { input ->
                         def data = new DataInputStream(input)

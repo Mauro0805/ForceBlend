@@ -16,6 +16,9 @@ class PluginResourcesTest {
         assertTrue(descriptor.contains("load: STARTUP"));
         assertTrue(descriptor.contains("main: com.mauro0805.forceblend.bukkit.ForceBlendPlugin"));
         assertTrue(descriptor.contains("api-version: '1.18'"));
+        String version = System.getProperty("forceblend.expected.version");
+        assertNotNull(version);
+        assertTrue(descriptor.contains("version: '" + version + "'"));
         assertFalse(descriptor.contains("folia-supported: true"));
     }
 

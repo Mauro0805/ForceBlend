@@ -3,6 +3,7 @@ package com.mauro0805.forceblend.bukkit;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -21,15 +22,17 @@ final class WorldLeaseProcess implements AutoCloseable {
     }
 
     static WorldLeaseProcess acquire(List<Path> worlds) throws IOException {
-        Path code;
+        String code;
         try {
-            code = Path.of(WorldLeaseWorker.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+            code = Path.of(WorldLeaseWorker.class.getProtectionDomain().getCodeSource().getLocation().toURI())
+                    + File.pathSeparator
+                    + Path.of(WorldLeases.class.getProtectionDomain().getCodeSource().getLocation().toURI());
         } catch (Exception exception) {
             throw new IOException("Cannot locate the lease worker", exception);
         }
         String executable = System.getProperty("os.name").startsWith("Windows") ? "java.exe" : "java";
         List<String> command = new ArrayList<>(List.of(Path.of(System.getProperty("java.home"), "bin", executable).toString(),
-                "-Xms16m", "-Xmx64m", "-cp", code.toString(), WorldLeaseWorker.class.getName()));
+                "-Xms16m", "-Xmx64m", "-cp", code, WorldLeaseWorker.class.getName()));
         worlds.forEach(world -> command.add(world.toString()));
         ProcessBuilder builder = new ProcessBuilder(command).redirectErrorStream(true);
         for (String name : List.of("_JAVA_OPTIONS", "JAVA_TOOL_OPTIONS", "JDK_JAVA_OPTIONS")) builder.environment().remove(name);

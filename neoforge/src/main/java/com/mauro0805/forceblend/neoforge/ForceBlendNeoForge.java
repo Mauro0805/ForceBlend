@@ -1,7 +1,6 @@
 package com.mauro0805.forceblend.neoforge;
 
 import com.mauro0805.forceblend.WorldPreparer;
-import net.minecraft.SharedConstants;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.storage.LevelResource;
 import net.neoforged.fml.common.Mod;
@@ -31,7 +30,7 @@ public final class ForceBlendNeoForge {
                 worldDirectory.getFileName().toString(),
                 worldDirectory,
                 gameDirectory,
-                SharedConstants.getCurrentVersion().name()
+                MinecraftVersion.name()
             );
         } catch (IOException exception) {
             throw new IllegalStateException("ForceBlend could not safely prepare the server world", exception);

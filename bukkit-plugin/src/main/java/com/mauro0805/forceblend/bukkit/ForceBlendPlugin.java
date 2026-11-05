@@ -19,23 +19,25 @@ import com.mauro0805.forceblend.version.SupportedMinecraftVersions;
 public final class ForceBlendPlugin extends JavaPlugin implements Listener {
     @Override
     public void onLoad() {
-        getLogger().info("Lifecycle: onLoad");
+        trace("Lifecycle: onLoad");
     }
 
     @Override
     public void onEnable() {
-        getLogger().info("Lifecycle: onEnable; loaded worlds=" + getServer().getWorlds().size());
+        trace("Lifecycle: onEnable; loaded worlds=" + getServer().getWorlds().size());
         if (!getServer().getWorlds().isEmpty()) {
-            getLogger().severe("Diagnostic refused: worlds already loaded. Use a full server restart.");
+            getLogger().severe("Startup work refused: worlds already loaded. Use a full server restart.");
             getServer().getPluginManager().disablePlugin(this);
             return;
         }
         saveDefaultConfig();
         boolean preparationAttempted = false;
+        String stage = "target validation";
         try {
             List<Path> targets = WorldTargets.validate(getServer().getWorldContainer().toPath(),
                     TargetConfiguration.worldNames(getConfig().get("worlds")));
-            for (Path target : targets) getLogger().info("Validated directory: " + target);
+            for (Path target : targets) trace("Validated directory: " + target);
+            stage = "configuration";
             Object analysis = getConfig().get("analysis-enabled");
             if (!(analysis instanceof Boolean enabled)) {
                 throw new IllegalArgumentException("analysis-enabled must be a YAML boolean");
@@ -48,9 +50,10 @@ public final class ForceBlendPlugin extends JavaPlugin implements Listener {
             if (!processing.automaticProcessingEnabled()) {
                 getLogger().info("Automatic processing is disabled; skipping startup work");
             } else if (prepare) {
+                stage = "offline ownership checks";
                 if (!getServer().isPrimaryThread()) throw new IOException("Preparation requires the startup thread");
                 for (var plugin : getServer().getPluginManager().getPlugins()) {
-                    if (plugin != this) throw new IOException("Offline preparation preview requires ForceBlend as the only plugin");
+                    if (plugin != this) throw new IOException("In-server offline preparation requires ForceBlend as the only plugin; use pre-start preparation when other plugins are installed");
                 }
                 if (!List.of("Spigot", "CraftBukkit", "Paper", "Purpur").contains(getServer().getName())) {
                     throw new IOException("Unverified server implementation; offline preparation refused");
@@ -59,6 +62,7 @@ public final class ForceBlendPlugin extends JavaPlugin implements Listener {
                 OfflinePreparation.run(targets, getServer().getWorldContainer().toPath(),
                         BukkitVersion.minecraftVersion(getServer().getBukkitVersion()), processing, getLogger());
             } else if (enabled) {
+                stage = "read-only analysis";
                 String version = BukkitVersion.minecraftVersion(getServer().getBukkitVersion());
                 var profile = SupportedMinecraftVersions.profileFor(version);
                 for (Path target : targets) {
@@ -75,32 +79,35 @@ public final class ForceBlendPlugin extends JavaPlugin implements Listener {
         } catch (IOException | IllegalArgumentException exception) {
             getLogger().log(Level.SEVERE, preparationAttempted
                     ? "Offline preparation failed; inspect retained backups before opening targets"
-                    : "Invalid targets; no world data changed", exception);
+                    : "Startup " + stage + " failed; no world data changed", exception);
             getServer().getPluginManager().disablePlugin(this);
             return;
         }
         getServer().getPluginManager().registerEvents(this, this);
-        getLogger().info("Startup work finished; offline preparation requires an exclusive existing session lock");
-        getLogger().info("An empty loaded-world list does not establish exclusive file ownership.");
+        getLogger().info("ForceBlend enabled; startup work finished");
     }
 
     @EventHandler
     public void onWorldInit(WorldInitEvent event) {
-        getLogger().info("Lifecycle: WorldInitEvent; world=" + event.getWorld().getName());
+        trace("Lifecycle: WorldInitEvent; world=" + event.getWorld().getName());
     }
 
     @EventHandler
     public void onWorldLoad(WorldLoadEvent event) {
-        getLogger().info("Lifecycle: WorldLoadEvent; world=" + event.getWorld().getName());
+        trace("Lifecycle: WorldLoadEvent; world=" + event.getWorld().getName());
     }
 
     @EventHandler
     public void onServerLoad(ServerLoadEvent event) {
-        getLogger().info("Lifecycle: ServerLoadEvent; type=" + event.getType());
+        trace("Lifecycle: ServerLoadEvent; type=" + event.getType());
     }
 
     @Override
     public void onDisable() {
-        getLogger().info("Lifecycle: onDisable");
+        trace("Lifecycle: onDisable");
+    }
+
+    private void trace(String message) {
+        if (getConfig().getBoolean("detailed-logging", false)) getLogger().info(message);
     }
 }

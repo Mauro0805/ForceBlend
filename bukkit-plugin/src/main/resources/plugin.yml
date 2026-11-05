@@ -1,5 +1,5 @@
 name: ForceBlend
-version: '1.2.1'
+version: '${version}'
 main: com.mauro0805.forceblend.bukkit.ForceBlendPlugin
 api-version: '1.18'
 load: STARTUP
