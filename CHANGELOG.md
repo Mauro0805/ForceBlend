@@ -4,10 +4,19 @@ Original mod by Mauro0805. Maintained by Mauro0805 and SasnycoN (valcheffnet).
 
 ## Unreleased
 
+- Fixes Bukkit analysis/offline preparation version detection for numeric `26.x.build.N` API qualifiers,
+  while retaining legacy version strings and strict rejection of unsupported Minecraft versions.
+- Adds API-string boundary regressions and runs the separate Bukkit build/API/package checks in CI.
+- Records expanded Paper runtime evidence separately from release approval; the current adapter fix remains
+  an unfrozen plugin candidate, not a newly published mod or a universal server support claim.
+
 - Fixes leftover `.forceblend-rollback-*.tmp` files in the region folder on Linux and macOS after a failed write.
   The world itself was already restored correctly.
 
-## Bukkit plugin 1.2.1 - 2026-10-31
+## Bukkit plugin 1.2.1 candidate - 2026-10-31
+
+This is the plugin development milestone, not a publication date. The separately published 1.2.1 mods live on
+`main`; their broader NeoForge port is not included in this branch. The mod build here remains 1.2.0.
 
 - Adds `ForceBlend-bukkit-1.2.1.jar`, using public Bukkit API without NMS. The same JAR provides stopped-world
   pre-start preparation and an optional in-server adapter for exclusively owned offline targets.

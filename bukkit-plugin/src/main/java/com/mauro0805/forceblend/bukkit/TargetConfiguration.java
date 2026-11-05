@@ -1,12 +1,13 @@
 package com.mauro0805.forceblend.bukkit;
 
-import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Properties;
 import com.mauro0805.forceblend.config.ForceBlendConfig;
 import com.mauro0805.forceblend.config.RunMode;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Properties;
 
 final class TargetConfiguration {
     static final List<String> PROCESSING_KEYS = List.of("automatic-processing", "automatic-backup", "detailed-logging",

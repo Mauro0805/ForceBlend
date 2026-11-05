@@ -57,9 +57,9 @@ public final class ForceBlendPlugin extends JavaPlugin implements Listener {
                 }
                 preparationAttempted = true;
                 OfflinePreparation.run(targets, getServer().getWorldContainer().toPath(),
-                        getServer().getBukkitVersion().split("-", 2)[0], processing, getLogger());
+                        BukkitVersion.minecraftVersion(getServer().getBukkitVersion()), processing, getLogger());
             } else if (enabled) {
-                String version = getServer().getBukkitVersion().split("-", 2)[0];
+                String version = BukkitVersion.minecraftVersion(getServer().getBukkitVersion());
                 var profile = SupportedMinecraftVersions.profileFor(version);
                 for (Path target : targets) {
                     Path terrain = WorldTargets.terrainDirectory(target);

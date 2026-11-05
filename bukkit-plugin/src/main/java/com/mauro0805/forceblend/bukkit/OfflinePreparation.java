@@ -5,29 +5,29 @@ import com.mauro0805.forceblend.backup.BackupCancellationToken;
 import com.mauro0805.forceblend.backup.WorldBackupService;
 import com.mauro0805.forceblend.config.ForceBlendConfig;
 import com.mauro0805.forceblend.config.RunMode;
+import com.mauro0805.forceblend.processing.ChunkProcessingEvent;
 import com.mauro0805.forceblend.processing.ProcessingOptions;
+import com.mauro0805.forceblend.processing.ProcessingProgress;
+import com.mauro0805.forceblend.processing.ProcessingProgressListener;
+import com.mauro0805.forceblend.processing.ProcessingRegionEvent;
 import com.mauro0805.forceblend.processing.WorldProcessor;
 import com.mauro0805.forceblend.version.SupportedMinecraftVersions;
-import com.mauro0805.forceblend.processing.ProcessingProgressListener;
-import com.mauro0805.forceblend.processing.ProcessingProgress;
-import com.mauro0805.forceblend.processing.ProcessingRegionEvent;
-import com.mauro0805.forceblend.processing.ChunkProcessingEvent;
+import net.jpountz.lz4.LZ4Factory;
 import net.querz.nbt.io.NBTDeserializer;
 import net.querz.nbt.tag.CompoundTag;
 
-import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Files;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.logging.Logger;
-import java.util.function.Consumer;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import net.jpountz.lz4.LZ4Factory;
+import java.util.function.Consumer;
+import java.util.logging.Logger;
 
 final class OfflinePreparation {
     private OfflinePreparation() {}
@@ -54,7 +54,9 @@ final class OfflinePreparation {
                 String location = Path.of(type.getProtectionDomain().getCodeSource().getLocation().toURI()).toString();
                 if (!roots.contains(location)) roots.add(location);
             }
-        } catch (Exception exception) { throw new IOException("Cannot locate worker dependencies", exception); }
+        } catch (Exception exception) {
+            throw new IOException("Cannot locate worker dependencies", exception);
+        }
         command.add(String.join(File.pathSeparator, roots));
         command.addAll(List.of(OfflinePreparationWorker.class.getName(), backupBase.toAbsolutePath().toString(), version,
                 Long.toString(config.maximumChunksPerRun()), Integer.toString(config.processingThreads()),
@@ -102,15 +104,22 @@ final class OfflinePreparation {
                 if (worker.isAlive()) worker.destroyForcibly();
                 long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
                 while (worker.isAlive() && System.nanoTime() < deadline) {
-                    try { worker.waitFor(100, TimeUnit.MILLISECONDS); }
-                    catch (InterruptedException exception) { interrupted = true; }
+                    try {
+                        worker.waitFor(100, TimeUnit.MILLISECONDS);
+                    } catch (InterruptedException exception) {
+                        interrupted = true;
+                    }
                 }
                 if (worker.isAlive()) cleanupFailure = new IOException("Preparation worker did not exit");
                 for (var stream : List.of(worker.getOutputStream(), worker.getInputStream(), worker.getErrorStream())) {
-                    try { stream.close(); }
-                    catch (IOException exception) {
-                        if (cleanupFailure == null) cleanupFailure = exception;
-                        else cleanupFailure.addSuppressed(exception);
+                    try {
+                        stream.close();
+                    } catch (IOException exception) {
+                        if (cleanupFailure == null) {
+                            cleanupFailure = exception;
+                        } else {
+                            cleanupFailure.addSuppressed(exception);
+                        }
                     }
                 }
             } finally {

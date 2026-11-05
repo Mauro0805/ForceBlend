@@ -6,13 +6,17 @@ ForceBlend prepares existing Overworld chunks so Minecraft can blend new terrain
 generator change, chunk import, or deletion. Minecraft generates and blends the terrain; ForceBlend prepares
 the existing side of the border. It does not retroactively smooth a border whose two sides already exist.
 
-## Version 1.2.0
+## Mod build in this branch: 1.2.0
 
 See the [changelog](CHANGELOG.md) for release changes and earlier version history.
 
 The `1.2.0` development branch combines the earlier workflow with ForceBlend Once's server and NeoForge support.
 Source availability is not a stable-release announcement. Releases use the existing
 [CurseForge project](https://www.curseforge.com/minecraft/mc-mods/forceblend-once); older Modrinth files are historical.
+
+The published mod line is now 1.2.1 on [`main`](https://github.com/Mauro0805/ForceBlend/tree/main), including a
+broader NeoForge port. That port is not in this Bukkit development branch: its local mod version, loader targets
+and build outputs below remain 1.2.0. Do not treat a build of this branch as the published 1.2.1 mod artifact.
 
 | Artifact | Declared target |
 |---|---|
@@ -82,6 +86,9 @@ The mod artifacts contain no Bukkit plugin; use the separate Bukkit JAR below.
 
 ## Bukkit plugin 1.2.1
 
+This is an unreleased plugin candidate, separate from the published Fabric/NeoForge mods with the same version
+number. Source and test results are available; full-range release approval is still pending.
+
 A separate `bukkit-plugin/` build uses the same shared preparation core. The same JAR is a conventional
 Bukkit plugin and a standalone pre-start tool. The pre-start route handles the server's main world while the
 server is stopped; it does not need to load Bukkit or disable the server's other plugins. No NMS is used.
@@ -131,14 +138,23 @@ Both paths require existing session locks, an exact Minecraft metadata-version m
 hard links and exclusive locks. Running worlds are refused, never unlocked or edited behind Minecraft's back.
 A bounded helper JVM owns both the locks and all preparation writes.
 
-The verified support matrix is deliberately narrow: Windows with local Anvil storage, Spigot build
+The earlier frozen-artifact matrix covers Windows with local Anvil storage, Spigot build
 3498-Spigot-b081915-10ba1be on 1.18.2, Paper 388/Purpur 1632 on 1.18.2, and Paper 132/Purpur 2568 on 1.21.11.
-Use Java 17 for these 1.18.2 servers and Java 21 for these 1.21.11 servers. Other builds and forks are not verified.
+Use Java 17 for these 1.18.2 servers and Java 21 for these 1.21.11 servers.
 This matrix is independent of Fabric/NeoForge compatibility. Java 17 bytecode and a Bukkit 1.18 API baseline do
 not establish a universal game range.
 
-Acceptance covers settings/removal, primary-world pre-start, backup restoration, and numerical seed-swap blending
-on those five combinations. Native storage checks cover external `.mcc` streams on both version families and
+The current candidate fixes Paper's numeric `.build.N` API-version qualifier. Expanded testing records actual
+runtime passes on all 29 Paper inputs in the pinned inventory; the final 21-entry queue passed 296 acceptance
+observations. Paper builds for 1.18, 1.21.9 and 26.1.1 are ALPHA inputs and remain qualified. The full-range gate
+is not complete: 1.20.3, 1.21.2 and 26.1 have no listed Paper input, other fork slots remain untested, and the
+current source still needs a clean freeze/revalidation. These passes do not certify every generator or platform.
+Exact builds, candidate provenance, per-version results and remaining gates are in the
+[team report](https://github.com/valcheffnet/forceblend-team/blob/main/blend-test/plugin-expanded/batch-7/README.md),
+subject to repository access and the maintainer's documentation push.
+
+The earlier frozen-artifact acceptance covers settings/removal, primary-world pre-start, backup restoration, and
+numerical seed-swap blending on those five combinations. Its native storage checks cover external `.mcc` streams on both version families and
 LZ4 on 1.21.11; 1.18.2 does not support LZ4. Minecraft may normalize compression/storage on its next save.
 Interruption and simulated write failures are tested on disposable worlds, including restoration and reopening.
 An interrupted application may have committed some regions: do not bypass a failed startup guard. Stop all
