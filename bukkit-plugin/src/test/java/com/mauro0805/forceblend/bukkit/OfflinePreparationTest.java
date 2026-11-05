@@ -29,6 +29,28 @@ class OfflinePreparationTest {
     @TempDir Path game;
     private final Logger logger = Logger.getLogger("offline-test");
 
+    @Test
+    void acceptsOnlyTheVerifiedStableUnobfuscatedMetadataAlias() {
+        CompoundTag version = new CompoundTag();
+        version.putString("Name", "1.21.11 Unobfuscated");
+        version.putInt("Id", 4671);
+        version.putString("Series", "main");
+        version.putByte("Snapshot", (byte) 0);
+        assertTrue(OfflinePreparation.matchesVersion("1.21.11", version, 4671));
+        assertFalse(OfflinePreparation.matchesVersion("1.21.10", version, 4671));
+        assertFalse(OfflinePreparation.matchesVersion("1.21.11", version, 4670));
+        version.putInt("Id", 4670);
+        assertFalse(OfflinePreparation.matchesVersion("1.21.11", version, 4671));
+        version.putInt("Id", 4671);
+        version.putByte("Snapshot", (byte) 1);
+        assertFalse(OfflinePreparation.matchesVersion("1.21.11", version, 4671));
+        version.remove("Snapshot");
+        assertFalse(OfflinePreparation.matchesVersion("1.21.11", version, 4671));
+        version.putByte("Snapshot", (byte) 0);
+        version.putString("Series", "other");
+        assertFalse(OfflinePreparation.matchesVersion("1.21.11", version, 4671));
+    }
+
     @ParameterizedTest
     @ValueSource(strings = {"1.17", "1.22", "26.4", "26.2-snapshot"})
     void completionNeverBypassesUnsupportedVersionRefusal(String version) throws IOException {

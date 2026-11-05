@@ -10,6 +10,7 @@ Original mod by Mauro0805. Maintained by Mauro0805 and SasnycoN (valcheffnet).
 - Explains settings and explicit acceptance in forceblend-settings-and-acceptance.properties; the legacy filename remains supported.
 - Uses supervised workers with exclusive session leases, strict version/path checks and no premature completion.
 - Fixes numeric Paper API build qualifiers while retaining unsupported-version rejection.
+- Recognizes stable Spigot 1.21.11 Unobfuscated world metadata without accepting mismatched versions or snapshots.
 - Caps worker concurrency by available processors and heap budget; operators can explicitly configure a 256-4096 MiB worker heap.
 - Keeps lifecycle tracing behind detailed logging and reports ownership/configuration failures separately.
 - Allows plugin removal after preparation; deferred work and every-open automation stop when removed.

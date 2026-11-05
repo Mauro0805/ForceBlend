@@ -15,6 +15,7 @@ import com.mauro0805.forceblend.version.SupportedMinecraftVersions;
 import net.jpountz.lz4.LZ4Factory;
 import net.querz.nbt.io.NBTDeserializer;
 import net.querz.nbt.tag.CompoundTag;
+import net.querz.nbt.tag.ByteTag;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -208,9 +209,19 @@ final class OfflinePreparation {
             if (!(named.getTag() instanceof CompoundTag root)) throw new IOException("Invalid level metadata");
             CompoundTag data = root.getCompoundTag("Data");
             CompoundTag recorded = data == null ? null : data.getCompoundTag("Version");
-            if (recorded == null || !version.equals(recorded.getString("Name"))) {
+            if (recorded == null || !matchesVersion(version, recorded, data.getInt("DataVersion"))) {
                 throw new IOException("Offline world must match the running Minecraft version exactly: " + world);
             }
         }
+    }
+
+    static boolean matchesVersion(String expected, CompoundTag recorded, int dataVersion) {
+        if (expected.equals(recorded.getString("Name"))) return true;
+        // Spigot's unobfuscated 1.21.11 build retains the stable release's data version.
+        return "1.21.11".equals(expected)
+                && "1.21.11 Unobfuscated".equals(recorded.getString("Name"))
+                && dataVersion == 4671 && recorded.getInt("Id") == 4671
+                && "main".equals(recorded.getString("Series"))
+                && recorded.get("Snapshot") instanceof ByteTag && !recorded.getBoolean("Snapshot");
     }
 }
