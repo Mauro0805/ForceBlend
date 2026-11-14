@@ -3,7 +3,7 @@ name: Build
 on:
   pull_request:
   push:
-    branches: [main, "1.2.0"]
+    branches: [main, "1.2.0", "1.3.0"]
 
 jobs:
   verify:
@@ -19,9 +19,13 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
       - name: Build both loaders and run the tests
         run: bash ./gradlew build --no-daemon
+      - name: Build Bukkit and verify the API boundary and bundled artifact
+        run: bash ./gradlew -p bukkit-plugin build --no-daemon --max-workers=2
       - uses: actions/upload-artifact@v4
         with:
           name: jars
           path: |
             fabric/build/libs/*.jar
             neoforge/build/libs/*.jar
+            bukkit-plugin/build/libs/ForceBlend-bukkit-*.jar
+            !bukkit-plugin/build/libs/*-unbundled.jar

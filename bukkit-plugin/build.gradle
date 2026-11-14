@@ -1,0 +1,128 @@
+plugins {
+    id 'java'
+    id 'com.gradleup.shadow' version '9.6.1'
+}
+def sharedProperties = new Properties()
+file('../gradle.properties').withInputStream { sharedProperties.load(it) }
+group = sharedProperties.getProperty('maven_group')
+version = sharedProperties.getProperty('mod_version')
+repositories {
+    mavenCentral()
+    maven { url = 'https://jitpack.io' }
+    maven { url = 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/' }
+}
+sourceSets {
+    main {
+        java.srcDir '../common/src/main/java'
+    }
+    test {
+        java.srcDir '../common/src/test/java'
+        java.exclude '**/client/**'
+        resources.srcDir '../common/src/test/resources'
+    }
+}
+dependencies {
+    implementation "com.github.Querz:NBT:${sharedProperties.getProperty('querz_nbt_version')}"
+    implementation "org.lz4:lz4-pure-java:${sharedProperties.getProperty('lz4_version')}"
+    compileOnly 'org.slf4j:slf4j-api:2.0.17'
+    testImplementation 'org.slf4j:slf4j-api:2.0.17'
+    testRuntimeOnly 'org.slf4j:slf4j-simple:2.0.17'
+    compileOnly 'org.spigotmc:spigot-api:1.18.2-R0.1-SNAPSHOT'
+    testImplementation platform("org.junit:junit-bom:${sharedProperties.getProperty('junit_version')}")
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+tasks.withType(JavaCompile).configureEach {
+    options.release = 17
+    options.encoding = 'UTF-8'
+}
+
+processResources {
+    def properties = [version: project.version.toString()]
+    inputs.properties(properties)
+    filesMatching(['plugin.yml', 'forceblend-settings-and-acceptance.properties']) { expand properties }
+}
+tasks.named('test') {
+    useJUnitPlatform()
+    systemProperty 'forceblend.expected.version', project.version.toString()
+    maxHeapSize = '512m'
+    maxParallelForks = 1
+    def temporaryDirectory = layout.buildDirectory.dir('test-tmp')
+    doFirst { temporaryDirectory.get().asFile.mkdirs() }
+    systemProperty 'java.io.tmpdir', temporaryDirectory.get().asFile.absolutePath
+    systemProperty 'junit.jupiter.tempdir.factory.default', 'com.mauro0805.forceblend.bukkit.RetryingTempDirectory'
+    systemProperty 'junit.jupiter.tempdir.cleanup.mode.default', 'NEVER'
+    systemProperty 'junit.jupiter.extensions.autodetection.enabled', 'true'
+    testLogging { events 'failed', 'skipped' }
+}
+tasks.named('jar') {
+    archiveBaseName = 'ForceBlend-bukkit'
+    archiveClassifier = 'unbundled'
+    from('../LICENSE.txt')
+    from('../common/src/main/resources/third_party') { into 'third_party' }
+}
+tasks.named('shadowJar') {
+    manifest { attributes 'Main-Class': 'com.mauro0805.forceblend.bukkit.ForceBlendPreStart' }
+    archiveBaseName = 'ForceBlend-bukkit'
+    archiveClassifier = ''
+    relocate 'net.querz', 'com.mauro0805.forceblend.internal.querz'
+    relocate 'net.jpountz', 'com.mauro0805.forceblend.internal.jpountz'
+    from('../LICENSE.txt')
+    from('../common/src/main/resources/third_party') { into 'third_party' }
+    exclude 'META-INF/versions/**', 'module-info.class', 'META-INF/*.SF', 'META-INF/*.RSA', 'META-INF/*.DSA'
+}
+tasks.named('assemble') { dependsOn tasks.named('shadowJar') }
+
+tasks.withType(AbstractArchiveTask).configureEach {
+    preserveFileTimestamps = false
+    reproducibleFileOrder = true
+}
+tasks.register('verifyBukkitBoundary') {
+    dependsOn tasks.named('classes')
+    doLast {
+        def forbidden = ['net/minecraft/', 'org/bukkit/craftbukkit/', 'org/spigotmc/',
+                         'io/papermc/', 'com/destroystokyo/', 'org/purpurmc/']
+        sourceSets.main.output.classesDirs.asFileTree.matching { include '**/*.class' }.each { file ->
+            def constants = new String(file.bytes, java.nio.charset.StandardCharsets.ISO_8859_1)
+            forbidden.each { prefix ->
+                if (constants.contains(prefix)) {
+                    throw new GradleException("Forbidden dependency ${prefix} in ${file.name}")
+                }
+            }
+        }
+    }
+}
+tasks.named('check') { dependsOn tasks.named('verifyBukkitBoundary') }
+
+tasks.register('verifyDiagnosticJar') {
+    dependsOn tasks.named('shadowJar')
+    doLast {
+        def archive = tasks.named('shadowJar').get().archiveFile.get().asFile
+        new java.util.zip.ZipFile(archive).withCloseable { zip ->
+            ['plugin.yml', 'config.yml', 'LICENSE.txt'].each { required ->
+                if (zip.getEntry(required) == null) throw new GradleException("Missing ${required}")
+            }
+            ['WorldLeaseWorker', 'WorldLeaseProcess'].each { probe ->
+                if (zip.getEntry("com/mauro0805/forceblend/bukkit/${probe}.class") != null) {
+                    throw new GradleException("Test helper leaked into plugin: ${probe}")
+                }
+            }
+            zip.entries().each { entry ->
+                if (entry.name.endsWith('.class')) {
+                    if (!entry.name.startsWith('com/mauro0805/forceblend/')) {
+                    throw new GradleException("Unexpected plugin JAR class: ${entry.name}")
+                    }
+                    zip.getInputStream(entry).withCloseable { input ->
+                        def data = new DataInputStream(input)
+                        data.readInt()
+                        data.readUnsignedShort()
+                        if (data.readUnsignedShort() > 61) {
+                            throw new GradleException("Bytecode exceeds Java 17: ${entry.name}")
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+tasks.named('check') { dependsOn tasks.named('verifyDiagnosticJar') }

@@ -1,0 +1,7 @@
+name: ForceBlend
+version: '${version}'
+main: com.mauro0805.forceblend.bukkit.ForceBlendPlugin
+api-version: '1.18'
+load: STARTUP
+description: Offline world preparation with exclusive session ownership and optional read-only analysis.
+authors: [Mauro0805, SasnycoN]

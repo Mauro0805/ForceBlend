@@ -2,12 +2,35 @@
 
 Original mod by Mauro0805. Maintained by Mauro0805 and SasnycoN (valcheffnet).
 
+## 1.3.0 - 2026-11-14
+
+### Paper, Purpur and Spigot plugin
+
+- New plugin for Bukkit servers. The same JAR also runs as a command before the server starts, and that is how the
+  main world gets prepared, because Minecraft keeps it locked while the server runs.
+- Settings and the acceptance switch are in `forceblend-settings-and-acceptance.properties`. The old
+  `forceblend-prestart.properties` name still works.
+- The options match the mod: once or every-open, a chunk limit per run, processing threads and detailed logging.
+  On a server a full backup is always made before any world file changes.
+- Preparation runs in a separate process that holds the world's session lock. If the server or that process dies
+  halfway, the world is not marked as finished.
+- That process gets 512 MiB by default and picks its thread count from the memory and the CPU. Set
+  `-Dforceblend.workerHeapMiB` (256 to 4096) to change the memory.
+- Paper version names with a build number, like `26.3.build.237`, are read correctly now. Spigot's
+  "1.21.11 Unobfuscated" worlds count as 1.21.11.
+- The log stays short unless `detailed-logging` is on. Settings mistakes and lock problems get their own messages.
+- You can remove the plugin after preparing. Every-open runs and unfinished chunk-limited work just stop.
+- Tested once on every Minecraft release from 1.18 to 26.3. Not tested: 1.20.3, 1.21.2 and 26.1, which had no server
+  build to test with, and 1.21.9, where Paper itself can hang when the server stops.
+
+### Mods
+
+- No changes for players. The Fabric and NeoForge files are the 1.2.1 mods with the new version number.
+
 ## 1.2.1 - 2026-10-25
 
-- The NeoForge file now runs on Minecraft 1.20.6 to 26.3 instead of 26.3 only. It is built for Java 21 and uses
-  the lz4 library that Minecraft ships, since a second copy stops NeoForge 1.20.6 and 1.21.1 at startup.
-- Fixes leftover `.forceblend-rollback-*.tmp` files in the region folder on Linux and macOS after a failed write.
-  The world itself was already restored correctly.
+- Extends the NeoForge file to Minecraft 1.20.6-26.3, retaining Java 21 bytecode and the game's LZ4 library.
+- Fixes leftover rollback temporary files on Linux and macOS after a failed write; restored world data was already correct.
 
 ## 1.2.0 - 2026-10-25
 

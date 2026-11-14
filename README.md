@@ -1,102 +1,116 @@
 # ForceBlend
 
-Original mod by Mauro0805. Maintained by Mauro0805 and SasnycoN (valcheffnet).
+Original mod by Mauro0805. Maintained by Mauro0805 and SasnycoN.
 
 ForceBlend prepares existing Overworld chunks so Minecraft can blend new terrain beside them after a seed or
-generator change, chunk import, or deletion. Minecraft generates and blends the terrain; ForceBlend prepares
-the existing side of the border. It does not retroactively smooth a border whose two sides already exist.
+generator change, chunk import or deletion. It prepares the existing side of the border; it does not generate
+terrain, change seeds or smooth a border whose two sides already exist. Back up important worlds before use.
 
-## Version 1.2.1
+## Downloads
 
-See the [changelog](CHANGELOG.md) for release changes and earlier version history.
+Get the files from the [releases page](https://github.com/Mauro0805/ForceBlend/releases) and install only the one
+for your platform:
 
-The `1.2.0` development branch combines the earlier workflow with ForceBlend Once's server and NeoForge support.
-Source availability is not a stable-release announcement. Releases use the existing
-[CurseForge project](https://www.curseforge.com/minecraft/mc-mods/forceblend-once); older Modrinth files are historical.
-
-| Artifact | Declared target |
+| File | Platform |
 |---|---|
-| `ForceBlend-1.2.1.jar` | Fabric, stable Minecraft 1.18-1.21.11 and 26.1-26.3 |
-| `ForceBlend-neoforge-1.2.1.jar` | NeoForge, Minecraft 1.20.6-26.3 |
+| `ForceBlend-1.3.0.jar` | Fabric, Minecraft 1.18-1.21.11 and 26.1-26.3 |
+| `ForceBlend-neoforge-1.3.0.jar` | NeoForge, Minecraft 1.20.6-26.3 |
+| `ForceBlend-bukkit-1.3.0.jar` | Paper, Purpur and Spigot servers (read the server section below first) |
 
-Install only the file for your loader, replacing any old ForceBlend Once JAR. Fabric API is not required;
-Mod Menu is optional on Fabric. Use the Java runtime required by the game. Fabric retains Java 17 bytecode;
-the NeoForge build uses Java 21 bytecode.
+Use the Java version your Minecraft version needs. The Fabric and Bukkit files run on Java 17 or newer, the NeoForge
+file on Java 21 or newer. Fabric API is not needed and Mod Menu is optional. If you still have the old ForceBlend
+Once JAR, remove it, since the two should not be installed together. Big modpacks and forks may behave differently,
+so try a copy of your world first.
 
-The 1.2.0 manual singleplayer test on Fabric 1.18.2 verified native screens, preparation, the `old_noise` marker,
-adjacent terrain, saving and reopening. Dedicated-server comparisons are recorded for Fabric 1.18.2, 1.19.4,
-1.20.4, 1.21.11, 26.1.2, 26.2 and 26.3, plus NeoForge 1.20.6, 1.21.1, 1.21.11, 26.1.2 and 26.3. Client-menu
-results are recorded for Fabric 26.x and the same five NeoForge versions.
-These are environment-specific results, not a guarantee for every modpack or every version in the declared ranges.
-Final release acceptance remains separate. Detailed evidence and maintainer checklists live in
-[forceblend-team](https://github.com/valcheffnet/forceblend-team), subject to repository access.
+## Using the mods
 
-## Opening a world
+Once-per-world preparation is the default. Selecting an unprepared world shows affected chunks, regions, deferred
+work and estimated processing time. Choose **Prepare world (backup is on)**, **Open without changes** or **Cancel**.
+With automatic backup disabled, **Back up and prepare world** remains first and **Prepare without backup (risky)**
+is a separate choice. Progress and completion use native Minecraft screens.
 
-Once per world is the default. Selecting an unprepared world starts read-only analysis of affected chunks,
-regions, deferred work and estimated processing time. With automatic backup enabled, choose:
-
-- **Prepare world (backup is on)**: back up, prepare, then enter.
-- **Open without changes**: enter without applying the plan.
-- **Cancel**: return without opening the world.
-
-With automatic backup disabled, preparation becomes two choices: **Back up and prepare world** first, then
-**Prepare without backup (risky)**. Processing uses native Minecraft progress screens, not desktop dialogs.
-
-A completed run records `forceblend.json`. Once mode skips later preparation; existing `forceblendonce.json`
-markers are honored too. Failed runs, absent terrain and deferred work do not record completion.
-Choose every-opening mode when later imports or deletions should trigger fresh analysis.
-
-## Settings and backups
-
-Edit `<game>/config/forceblend.properties`, or use optional Fabric Mod Menu settings.
-Values are read again at the next opening or server start.
+Edit `<game>/config/forceblend.properties` or use Fabric Mod Menu. Settings are reread on the next opening/start:
 
 | Setting | Default |
 |---|---|
-| `run-mode` | `once` (`every-open` is available) |
+| `run-mode` | `once`; optional `every-open` |
 | `automatic-processing` | `true` |
 | `automatic-backup` | `true` |
 | `detailed-logging` | `false` |
 | `maximum-chunks-per-run` | `unlimited` |
 | `processing-threads` | `all` |
 
-When automatic processing is disabled, clients ask before analysis and dedicated servers skip preparation.
-Dedicated servers have no dialogs and always require a completed backup before applying, regardless of the
-client backup preference.
+Completed runs record `forceblend.json`; legacy `forceblendonce.json` markers are honored. Failed, empty or
+chunk-limited unfinished runs do not record completion. Use `every-open` after later imports or deletions.
+Client backups are enabled by default. Dedicated-server preparation always requires a completed backup.
 
-Backups are complete world ZIPs under `<game>/backups/forceblend/<world>/`, outside the source world.
-Only the root runtime `session.lock` is excluded. Keep a separate, restorable offline copy of important worlds.
-Preparation uses per-region safeguards, not an atomic transaction across the entire world.
+## Paper, Purpur and Spigot servers
 
-## Boundaries
+**Putting the JAR in `plugins/` does not prepare your main world.** Minecraft locks the main world while the
+server runs, and ForceBlend never works around that lock. The main world is prepared by running the same JAR as a
+command before the server starts. If your host does not let you run a command before Minecraft, you cannot prepare
+the main world with the plugin.
 
-Only complete Overworld Anvil terrain chunks within the seven-chunk frontier of missing or incomplete terrain
-are blending candidates. Deep interiors stay untouched. The mod preserves chunk status, DataVersion and world
-content while changing blending markers and the relevant derived caches; unsafe old markers on partial chunks
-can be repaired.
+1. Stop the server and close any world editors. Keep your own backup of worlds you care about.
+2. Put `ForceBlend-bukkit-1.3.0.jar` next to the server JAR, together with the settings file
+   [`forceblend-settings-and-acceptance.properties`](https://github.com/Mauro0805/ForceBlend/releases/download/v1.3.0/forceblend-settings-and-acceptance.properties)
+   from the release.
+3. Fill in `worlds` and the exact `minecraft-version`, read the comments in the file, then set
+   `accept-world-preparation=true`.
+4. From the server directory run the command below, and start Minecraft **only if it exits with code 0**.
 
-Nether, End, custom dimensions, entity/POI files and structure data are not processed. ForceBlend does not edit
-seeds, import/delete chunks, generate terrain or reposition structures. CubicChunks, Forge and snapshots are
-unsupported. Terrain generators must retain compatible Anvil storage and Minecraft's native blending path.
-Paper remains future work, with no plugin artifact in 1.2.0.
+```text
+java -Xmx128m -jar ForceBlend-bukkit-1.3.0.jar --settings forceblend-settings-and-acceptance.properties
+```
+
+Put that exit-code check in your startup script or panel, so a failed preparation never leads to the world being
+opened. You can also put the JAR in `plugins/`, where it can analyze worlds without changing them or prepare
+extra worlds that are not loaded. Those settings are in `plugins/ForceBlend/config.yml`. Preparing from inside the
+server only works when ForceBlend is the only plugin, and it refuses any world that is locked. The command before
+startup has no such limit.
+
+The preparation runs in a separate process with 512 MiB of memory by default and uses as many threads as that
+memory and your CPU allow. To give it more memory, add `-Dforceblend.workerHeapMiB=1024` before `-jar` (256 to 4096
+MiB), and leave enough RAM for the server and the OS. The settings file explains every other option.
+
+Version 1.3.0 was tested once on every Minecraft release from 1.18 to 26.3, each time on Paper, Purpur or Spigot.
+1.20.3, 1.21.2 and 26.1 were not tested because no server build for them was available. Folia, other forks and
+setups with world-management plugins are not supported.
+
+> [!CAUTION]
+> ### Paper 1.21.9 can hang when the server stops, even without ForceBlend. This is a Paper bug, so ForceBlend 1.3.0 was not tested on 1.21.9. Use Paper 1.21.10 or newer.
+
+### Removing the plugin
+
+Stop the server, delete the ForceBlend JAR from `plugins/`, and take the ForceBlend command and its exit-code check
+out of your startup script so the server starts the normal way again. You can delete the settings and completion
+files too, but keep the backups. Minecraft reads prepared chunks and blends new terrain without ForceBlend
+installed. After removal, every-open runs and unfinished chunk-limited work stop, and terrain that was already
+generated stays as it is.
+
+## Backups and limits
+
+Backups are full-world ZIPs in `backups/forceblend/<world>/`, outside the source world. Only root `session.lock`
+is excluded. Preparation has per-region safeguards, not a single atomic transaction across the whole world.
+After a failed application, retain the failed copy and restore a complete backup before retrying.
+
+Only complete Overworld Anvil chunks near missing/incomplete terrain are candidates; deep interiors stay untouched.
+Nether, End, custom dimensions, entity/POI files and structure data are not processed. Structures are not repositioned.
+CubicChunks, Forge and snapshots are unsupported. Custom generators must preserve compatible storage and native blending.
 
 ## Building and contributing
 
 Use JDK 25 and the included Gradle wrapper:
 
-```bash
+```text
 ./gradlew build
-./gradlew -p fabric build
-./gradlew -p neoforge build
+./gradlew -p bukkit-plugin build
 ```
 
-On Windows, use `gradlew.bat`. The root build builds both loaders and runs the shared tests.
-Ordinary release JARs are in `fabric/build/libs/` and `neoforge/build/libs/`.
-Shared sources live in `common/`; loader adapters and metadata live in `fabric/` and `neoforge/`.
+On Windows use `gradlew.bat`. Mod JARs are in `fabric/build/libs/` and `neoforge/build/libs/`; the separate plugin is
+in `bukkit-plugin/build/libs/`. Do not install sources or `-unbundled` intermediates. Shared code lives in `common/`.
+Versions and shared NBT/LZ4 coordinates come from root `gradle.properties`.
 
-This started as a community proof of concept. Any modpack may include it without asking, and forks are welcome.
-Community changes can use pull requests, but review, support, future updates and release schedules are not guaranteed.
-Keep changes focused and test world-data changes only against disposable copies.
-
-ForceBlend is [MIT-licensed](LICENSE.txt). Preserve the original copyright and bundled third-party notices when redistributing.
+Any modpack may include ForceBlend without asking. Forks are welcome under the [MIT license](LICENSE.txt).
+This began as a community proof of concept; review, support, updates and release schedules are not guaranteed.
+Keep contributions focused and test world-data changes on disposable copies. See the [changelog](CHANGELOG.md).
