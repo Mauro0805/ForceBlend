@@ -2,7 +2,7 @@
 
 Original mod by Mauro0805. Maintained by Mauro0805 and SasnycoN (valcheffnet).
 
-## 1.3.0 - Unreleased
+## 1.3.0 - 2026-11-14
 
 ### Paper, Purpur and Spigot plugin
 
