@@ -6,20 +6,21 @@ ForceBlend prepares existing Overworld chunks so Minecraft can blend new terrain
 generator change, chunk import or deletion. It prepares the existing side of the border; it does not generate
 terrain, change seeds or smooth a border whose two sides already exist. Back up important worlds before use.
 
-## 1.3.0 candidate
+## Downloads
 
-This development version combines the 1.2.1 mods with a separate Bukkit plugin. It is not a published release.
-Use only the file for your platform:
+Get the files from the [releases page](https://github.com/Mauro0805/ForceBlend/releases) and install only the one
+for your platform:
 
-| Artifact | Target |
+| File | Platform |
 |---|---|
 | `ForceBlend-1.3.0.jar` | Fabric, Minecraft 1.18-1.21.11 and 26.1-26.3 |
 | `ForceBlend-neoforge-1.3.0.jar` | NeoForge, Minecraft 1.20.6-26.3 |
-| `ForceBlend-bukkit-1.3.0.jar` | Bukkit-compatible server/pre-start tool; see installation requirements below |
+| `ForceBlend-bukkit-1.3.0.jar` | Paper, Purpur and Spigot servers (read the server section below first) |
 
-Use the Java runtime required by Minecraft. Fabric and Bukkit retain Java 17 bytecode; NeoForge retains Java 21
-bytecode and uses Minecraft's LZ4 library. Fabric API is not required; Fabric Mod Menu is optional. Replace any
-old ForceBlend Once JAR rather than installing both. Declared ranges are not guarantees for every modpack or fork.
+Use the Java version your Minecraft version needs. The Fabric and Bukkit files run on Java 17 or newer, the NeoForge
+file on Java 21 or newer. Fabric API is not needed and Mod Menu is optional. If you still have the old ForceBlend
+Once JAR, remove it, since the two should not be installed together. Big modpacks and forks may behave differently,
+so try a copy of your world first.
 
 ## Using the mods
 
@@ -43,40 +44,49 @@ Completed runs record `forceblend.json`; legacy `forceblendonce.json` markers ar
 chunk-limited unfinished runs do not record completion. Use `every-open` after later imports or deletions.
 Client backups are enabled by default. Dedicated-server preparation always requires a completed backup.
 
-## Bukkit-compatible servers
+## Paper, Purpur and Spigot servers
 
-**Installing the JAR in `plugins/` alone does not prepare the main world.** Main-world preparation requires a
-pre-start command while the server is stopped. If your host cannot run that command before Minecraft, this
-primary-world workflow is unavailable. ForceBlend never bypasses a running world's session lock.
+**Putting the JAR in `plugins/` does not prepare your main world.** Minecraft locks the main world while the
+server runs, and ForceBlend never works around that lock. The main world is prepared by running the same JAR as a
+command before the server starts. If your host does not let you run a command before Minecraft, you cannot prepare
+the main world with the plugin.
 
-1. Stop the server and world editors. Keep an independent backup of important worlds.
-2. Put `ForceBlend-bukkit-1.3.0.jar` beside the server JAR. Copy the
-   [settings template](bukkit-plugin/src/main/resources/forceblend-settings-and-acceptance.properties) there too.
-3. Set `worlds` and the exact `minecraft-version`, read the comments, then set `accept-world-preparation=true`.
-4. Run the command below from the server directory. Start Minecraft **only if it exits with code 0**.
+1. Stop the server and close any world editors. Keep your own backup of worlds you care about.
+2. Put `ForceBlend-bukkit-1.3.0.jar` next to the server JAR, together with the settings file
+   [`forceblend-settings-and-acceptance.properties`](https://github.com/Mauro0805/ForceBlend/releases/download/v1.3.0/forceblend-settings-and-acceptance.properties)
+   from the release.
+3. Fill in `worlds` and the exact `minecraft-version`, read the comments in the file, then set
+   `accept-world-preparation=true`.
+4. From the server directory run the command below, and start Minecraft **only if it exits with code 0**.
 
 ```text
 java -Xmx128m -jar ForceBlend-bukkit-1.3.0.jar --settings forceblend-settings-and-acceptance.properties
 ```
 
-Keep this exit-code guard in your startup script or panel; do not start the world after a failed preparation.
-The same JAR may optionally be installed in `plugins/` for read-only analysis or explicitly selected offline
-worlds. Its configuration is `plugins/ForceBlend/config.yml`; in-server preparation requires ForceBlend as the
-only plugin and refuses locked worlds. This restriction does not apply to the stopped-world pre-start route.
+Put that exit-code check in your startup script or panel, so a failed preparation never leads to the world being
+opened. You can also put the JAR in `plugins/`, where it can analyze worlds without changing them or prepare
+extra worlds that are not loaded. Those settings are in `plugins/ForceBlend/config.yml`. Preparing from inside the
+server only works when ForceBlend is the only plugin, and it refuses any world that is locked. The command before
+startup has no such limit.
 
-The worker defaults to 512 MiB and caps processing concurrency by heap and CPU budget. To change its heap, add
-`-Dforceblend.workerHeapMiB=1024` before `-jar`; supported values are 256-4096 MiB. Leave RAM for the server and OS.
-The settings template explains worker limits, once/every-open operation and all other options.
+The preparation runs in a separate process with 512 MiB of memory by default and uses as many threads as that
+memory and your CPU allow. To give it more memory, add `-Dforceblend.workerHeapMiB=1024` before `-jar` (256 to 4096
+MiB), and leave enough RAM for the server and the OS. The settings file explains every other option.
 
-Server compatibility is limited to the builds advertised with the final release, not every Bukkit API fork.
-Folia, distributed storage and arbitrary world-management/plugin combinations are not supported.
+Version 1.3.0 was tested once on every Minecraft release from 1.18 to 26.3, each time on Paper, Purpur or Spigot.
+1.20.3, 1.21.2 and 26.1 were not tested because no server build for them was available. Folia, other forks and
+setups with world-management plugins are not supported.
+
+> [!CAUTION]
+> ### Paper 1.21.9 can hang when the server stops, even without ForceBlend. This is a Paper bug, so ForceBlend 1.3.0 was not tested on 1.21.9. Use Paper 1.21.10 or newer.
 
 ### Removing the plugin
 
-Stop the server, remove its ForceBlend JAR from `plugins/` and remove the pre-start command and dependent exit-code
-guard. Restore the normal server launch command. Settings and completion files may be removed; keep backups.
-Minecraft does not need ForceBlend installed to read prepared chunks or perform native blending. Removing it
-stops every-open automation and unfinished chunk-limited work; it does not undo generated terrain.
+Stop the server, delete the ForceBlend JAR from `plugins/`, and take the ForceBlend command and its exit-code check
+out of your startup script so the server starts the normal way again. You can delete the settings and completion
+files too, but keep the backups. Minecraft reads prepared chunks and blends new terrain without ForceBlend
+installed. After removal, every-open runs and unfinished chunk-limited work stop, and terrain that was already
+generated stays as it is.
 
 ## Backups and limits
 

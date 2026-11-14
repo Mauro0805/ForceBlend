@@ -4,16 +4,28 @@ Original mod by Mauro0805. Maintained by Mauro0805 and SasnycoN (valcheffnet).
 
 ## 1.3.0 - Unreleased
 
-- Integrates the 1.2.1 mod changes with the separate Bukkit plugin, aligning all artifact versions to 1.3.0.
-- Adds a Bukkit-API-only plugin and same-JAR pre-start tool for stopped Overworlds; no NMS or live-world writes.
-- Provides once/every-open modes, chunk limits, processing threads, progress logs and mandatory server backups.
-- Explains settings and explicit acceptance in forceblend-settings-and-acceptance.properties; the legacy filename remains supported.
-- Uses supervised workers with exclusive session leases, strict version/path checks and no premature completion.
-- Fixes numeric Paper API build qualifiers while retaining unsupported-version rejection.
-- Recognizes stable Spigot 1.21.11 Unobfuscated world metadata without accepting mismatched versions or snapshots.
-- Caps worker concurrency by available processors and heap budget; operators can explicitly configure a 256-4096 MiB worker heap.
-- Keeps lifecycle tracing behind detailed logging and reports ownership/configuration failures separately.
-- Allows plugin removal after preparation; deferred work and every-open automation stop when removed.
+### Paper, Purpur and Spigot plugin
+
+- New plugin for Bukkit servers. The same JAR also runs as a command before the server starts, and that is how the
+  main world gets prepared, because Minecraft keeps it locked while the server runs.
+- Settings and the acceptance switch are in `forceblend-settings-and-acceptance.properties`. The old
+  `forceblend-prestart.properties` name still works.
+- The options match the mod: once or every-open, a chunk limit per run, processing threads and detailed logging.
+  On a server a full backup is always made before any world file changes.
+- Preparation runs in a separate process that holds the world's session lock. If the server or that process dies
+  halfway, the world is not marked as finished.
+- That process gets 512 MiB by default and picks its thread count from the memory and the CPU. Set
+  `-Dforceblend.workerHeapMiB` (256 to 4096) to change the memory.
+- Paper version names with a build number, like `26.3.build.237`, are read correctly now. Spigot's
+  "1.21.11 Unobfuscated" worlds count as 1.21.11.
+- The log stays short unless `detailed-logging` is on. Settings mistakes and lock problems get their own messages.
+- You can remove the plugin after preparing. Every-open runs and unfinished chunk-limited work just stop.
+- Tested once on every Minecraft release from 1.18 to 26.3. Not tested: 1.20.3, 1.21.2 and 26.1, which had no server
+  build to test with, and 1.21.9, where Paper itself can hang when the server stops.
+
+### Mods
+
+- No changes for players. The Fabric and NeoForge files are the 1.2.1 mods with the new version number.
 
 ## 1.2.1 - 2026-10-25
 
